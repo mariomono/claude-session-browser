@@ -101,3 +101,19 @@ def test_synthetic_model_ignored_for_model_and_usage(write_session):
     idx = indexer.index_file(path)
     assert idx.model is None
     assert idx.context_tokens is None
+
+
+def test_meta_record_does_not_pollute_last_activity(write_session):
+    meta = {"type": "user", "isMeta": True,
+            "timestamp": "2026-06-01T12:00:00Z",
+            "cwd": "/wrong/cwd",
+            "message": {"role": "user", "content": "system reminder"}}
+    path = write_session([
+        _user("real prompt", ts="2026-05-30T09:00:00Z"),
+        _assistant(),  # timestamp 2026-05-30T10:00:00Z
+        meta,          # later timestamp, must be ignored
+    ])
+    idx = indexer.index_file(path)
+    assert idx.last_activity == "2026-05-30T10:00:00Z"
+    assert idx.cwd == "/home/mario/projects/demo"
+    assert idx.message_count == 2  # meta record excluded

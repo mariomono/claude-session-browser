@@ -71,6 +71,8 @@ def index_file(path: Path) -> SessionIndex:
             continue
         if r.get("isSidechain"):
             continue
+        if t == "user" and (r.get("isMeta") or r.get("isCompactSummary")):
+            continue
 
         cwd = cwd or r.get("cwd")
         git_branch = git_branch or r.get("gitBranch")
@@ -80,8 +82,6 @@ def index_file(path: Path) -> SessionIndex:
         msg = r.get("message", {}) or {}
 
         if t == "user":
-            if r.get("isMeta") or r.get("isCompactSummary"):
-                continue
             if r.get("interruptedMessageId"):
                 interrupted_flag = True
             convo.append(("user", r))
