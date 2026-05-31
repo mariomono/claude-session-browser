@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from . import tokens
-from .jsonl import read_records
+from .jsonl import iter_records, read_records
 from .models import SessionIndex
 from .text import is_real_user_prompt, message_text, truncate
 
@@ -178,3 +178,12 @@ def find_session_path(root: Path, session_id: str) -> Path | None:
         return None
     matches = list(root.glob(f"*/{session_id}.jsonl"))
     return matches[0] if matches else None
+
+
+def session_cwd(path: Path) -> str | None:
+    """Return the first cwd recorded in a session file, reading lazily."""
+    for r in iter_records(path):
+        cwd = r.get("cwd")
+        if cwd:
+            return cwd
+    return None

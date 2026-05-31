@@ -72,3 +72,22 @@ def test_find_session_path_rejects_traversal(tmp_path):
     root = tmp_path / "projects"
     root.mkdir(parents=True)
     assert indexer.find_session_path(root, "../../etc/passwd") is None
+
+
+def test_session_cwd_returns_first_cwd(tmp_path):
+    root = tmp_path / "projects"
+    (root / "p").mkdir(parents=True)
+    f = root / "p" / "s.jsonl"
+    f.write_text(
+        json.dumps({"type": "ai-title", "aiTitle": "x"}) + "\n"
+        + json.dumps({"type": "user", "cwd": "/home/mario/projects/demo",
+                      "message": {"role": "user", "content": "hi"}}) + "\n")
+    assert indexer.session_cwd(f) == "/home/mario/projects/demo"
+
+
+def test_session_cwd_none_when_absent(tmp_path):
+    root = tmp_path / "projects"
+    (root / "p").mkdir(parents=True)
+    f = root / "p" / "s.jsonl"
+    f.write_text(json.dumps({"type": "ai-title", "aiTitle": "x"}) + "\n")
+    assert indexer.session_cwd(f) is None
