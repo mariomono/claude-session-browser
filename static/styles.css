@@ -1,0 +1,57 @@
+:root {
+  --bg: #0f1115; --panel: #181b22; --line: #272b34;
+  --fg: #e6e8ec; --muted: #8b93a1; --accent: #6ea8fe;
+  --clean: #4caf50; --interrupted: #e6a23c; --error: #f56c6c;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+header {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  padding: 0.75rem 1rem; border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; background: var(--bg); z-index: 5;
+}
+header h1 { font-size: 1.1rem; margin: 0; }
+.controls { display: flex; gap: 0.5rem; margin-left: auto; }
+input, select, button {
+  background: var(--panel); color: var(--fg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 0.4rem 0.6rem;
+}
+button { cursor: pointer; }
+main { padding: 1rem; }
+table { width: 100%; border-collapse: collapse; }
+th, td {
+  text-align: left; padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--line); vertical-align: top;
+}
+th[data-sort] { cursor: pointer; user-select: none; }
+th[data-sort]:hover { color: var(--accent); }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--panel); }
+.muted { color: var(--muted); }
+.desc { color: var(--muted); font-size: 0.85rem; max-width: 28rem; }
+.desc .last { color: var(--fg); }
+.badge { display: inline-block; padding: 0 0.4rem; border-radius: 4px;
+  font-size: 0.75rem; border: 1px solid var(--line); margin-right: 0.25rem; }
+.badge.clean { color: #7bd88f; }
+.badge.interrupted { color: #e6a23c; }
+.badge.error { color: #f56c6c; }
+.badge.unknown { color: var(--muted); }
+.bar { background: var(--line); border-radius: 4px; height: 8px; width: 90px; }
+.bar > span { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
+.bar.high > span { background: var(--error); }
+
+/* detail view */
+#detail-view { max-width: 56rem; margin: 0 auto; }
+#detail-header { margin: 0.5rem 0 1rem; color: var(--muted); }
+.entry { border: 1px solid var(--line); border-radius: 8px;
+  margin: 0.6rem 0; padding: 0.5rem 0.75rem; background: var(--panel); }
+.entry.user { border-left: 3px solid var(--accent); }
+.entry.assistant { border-left: 3px solid #7bd88f; }
+.entry.system { border-left: 3px solid var(--muted); opacity: 0.85; }
+.entry.sidechain { opacity: 0.7; margin-left: 1.5rem; }
+.entry .role { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); }
+.entry pre { white-space: pre-wrap; word-break: break-word; margin: 0.3rem 0 0; }
+details summary { cursor: pointer; color: var(--muted); }
