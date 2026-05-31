@@ -81,7 +81,9 @@ def index_file(path: Path) -> SessionIndex:
         ts = r.get("timestamp")
         if ts and (last_activity is None or ts > last_activity):
             last_activity = ts
-        msg = r.get("message", {}) or {}
+        msg = r.get("message")
+        if not isinstance(msg, dict):
+            msg = {}
 
         if t == "user":
             if r.get("interruptedMessageId"):
@@ -98,8 +100,9 @@ def index_file(path: Path) -> SessionIndex:
             convo.append(("assistant", r))
             if model and model != "<synthetic>":
                 last_model = model
-                if msg.get("usage"):
-                    last_usage = msg["usage"]
+                usage = msg.get("usage")
+                if isinstance(usage, dict) and usage:
+                    last_usage = usage
 
     outcome = compute_outcome(convo, interrupted_flag)
 

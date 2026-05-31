@@ -35,7 +35,8 @@ function sortSessions() {
 }
 
 function badge(outcome) {
-  return `<span class="badge ${outcome}">${outcome}</span>`;
+  const safe = escapeHtml(outcome);
+  return `<span class="badge ${safe}">${safe}</span>`;
 }
 
 function recency(ts) {

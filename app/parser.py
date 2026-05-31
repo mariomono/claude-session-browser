@@ -44,7 +44,9 @@ def parse_transcript(path: Path) -> Transcript:
         cwd = cwd or r.get("cwd")
         ts = r.get("timestamp")
         sc = bool(r.get("isSidechain"))
-        msg = r.get("message", {}) or {}
+        msg = r.get("message")
+        if not isinstance(msg, dict):
+            msg = {}
 
         if t == "user":
             if r.get("isCompactSummary"):

@@ -103,6 +103,24 @@ def test_synthetic_model_ignored_for_model_and_usage(write_session):
     assert idx.context_tokens is None
 
 
+def test_index_file_survives_non_dict_message(write_session):
+    path = write_session([
+        {"type": "user", "timestamp": "2026-05-30T09:00:00Z",
+         "cwd": "/home/mario/projects/demo", "message": "oops not a dict"},
+        _assistant(),
+    ])
+    idx = indexer.index_file(path)  # must not raise
+    assert idx.outcome == "clean"
+
+
+def test_index_file_survives_non_dict_usage(write_session):
+    bad = _assistant()
+    bad["message"]["usage"] = [1, 2, 3]  # malformed usage
+    path = write_session([_user("hi"), bad])
+    idx = indexer.index_file(path)  # must not raise
+    assert idx.context_tokens is None
+
+
 def test_meta_record_does_not_pollute_last_activity(write_session):
     meta = {"type": "user", "isMeta": True,
             "timestamp": "2026-06-01T12:00:00Z",

@@ -26,3 +26,17 @@ def test_iter_records_skips_malformed(tmp_path):
     f = tmp_path / "s.jsonl"
     f.write_text('{"a": 1}\nbad\n{"a": 2}\n')
     assert [r["a"] for r in jsonl.iter_records(f)] == [1, 2]
+
+
+def test_read_records_skips_non_dict_json(tmp_path):
+    f = tmp_path / "s.jsonl"
+    f.write_text('"just a string"\n42\n[1, 2, 3]\n{"type": "user"}\n')
+    records, bad = jsonl.read_records(f)
+    assert records == [{"type": "user"}]
+    assert bad == 3  # the 3 non-dict JSON values count as unusable
+
+
+def test_iter_records_skips_non_dict_json(tmp_path):
+    f = tmp_path / "s.jsonl"
+    f.write_text('"x"\n{"a": 1}\n[2]\n')
+    assert list(jsonl.iter_records(f)) == [{"a": 1}]

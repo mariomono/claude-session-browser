@@ -11,7 +11,7 @@ def context_fill(usage: dict | None) -> int:
     the context window was at that turn. Output tokens are excluded on purpose,
     and we never sum across messages.
     """
-    if not usage:
+    if not isinstance(usage, dict):
         return 0
     return (
         (usage.get("input_tokens") or 0)

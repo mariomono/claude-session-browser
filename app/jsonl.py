@@ -15,9 +15,11 @@ def iter_records(path: Path) -> Iterator[dict]:
             if not line:
                 continue
             try:
-                yield json.loads(line)
+                obj = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            if isinstance(obj, dict):
+                yield obj
 
 
 def read_records(path: Path) -> tuple[list[dict], int]:
@@ -30,7 +32,12 @@ def read_records(path: Path) -> tuple[list[dict], int]:
             if not line:
                 continue
             try:
-                records.append(json.loads(line))
+                obj = json.loads(line)
             except json.JSONDecodeError:
+                bad += 1
+                continue
+            if isinstance(obj, dict):
+                records.append(obj)
+            else:
                 bad += 1
     return records, bad

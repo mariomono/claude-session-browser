@@ -30,3 +30,8 @@ def test_context_pct():
     assert tokens.context_pct(50_000, 200_000) == 25.0
     assert tokens.context_pct(0, 200_000) == 0.0
     assert tokens.context_pct(100, 0) == 0.0
+
+
+def test_context_fill_handles_non_dict():
+    assert tokens.context_fill([1, 2, 3]) == 0
+    assert tokens.context_fill("nope") == 0
