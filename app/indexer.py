@@ -1,4 +1,6 @@
 """Build a lightweight, cached index of all Claude Code sessions."""
+import json
+import re
 from pathlib import Path
 
 from . import tokens
@@ -124,3 +126,52 @@ def index_file(path: Path) -> SessionIndex:
         file_mtime=stat.st_mtime,
         file_size=stat.st_size,
     )
+
+
+_SESSION_ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def load_cache(cache_path: Path) -> dict:
+    if not cache_path.exists():
+        return {}
+    try:
+        return json.loads(cache_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def save_cache(cache_path: Path, entries: dict) -> None:
+    cache_path.write_text(json.dumps(entries))
+
+
+def build_index(root: Path, cache_path: Path, force: bool = False) -> list[SessionIndex]:
+    """Scan root for sessions, reusing cache entries whose mtime+size match."""
+    cache = {} if force else load_cache(cache_path)
+    fresh: dict = {}
+    sessions: list[SessionIndex] = []
+    if root.exists():
+        for path in root.glob("*/*.jsonl"):
+            key = str(path)
+            stat = path.stat()
+            cached = cache.get(key)
+            if (
+                cached
+                and cached.get("file_mtime") == stat.st_mtime
+                and cached.get("file_size") == stat.st_size
+            ):
+                idx = SessionIndex(**cached)
+            else:
+                idx = index_file(path)
+            fresh[key] = idx.model_dump()
+            sessions.append(idx)
+    save_cache(cache_path, fresh)
+    sessions.sort(key=lambda s: s.last_activity or "", reverse=True)
+    return sessions
+
+
+def find_session_path(root: Path, session_id: str) -> Path | None:
+    """Resolve a session id to its file, rejecting anything non-id-shaped."""
+    if not _SESSION_ID_RE.match(session_id):
+        return None
+    matches = list(root.glob(f"*/{session_id}.jsonl"))
+    return matches[0] if matches else None
