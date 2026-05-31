@@ -1,0 +1,8 @@
+{
+  "distro": "Ubuntu-24.04",
+  "launch": [
+    "cmd.exe", "/c", "start", "",
+    "wsl.exe", "-d", "{distro}", "--cd", "{cwd}", "--",
+    "bash", "-lic", "{claude}"
+  ]
+}
