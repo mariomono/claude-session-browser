@@ -68,6 +68,45 @@ function escapeHtml(str) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+function showToast(html, sticky = false) {
+  const t = $("#toast");
+  t.innerHTML = html;
+  t.hidden = false;
+  if (!sticky) {
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.hidden = true; }, 3000);
+  }
+}
+
+async function resume(id, mode, ev) {
+  if (ev) ev.stopPropagation();
+  try {
+    const resp = await fetch(`/api/sessions/${encodeURIComponent(id)}/resume?mode=${mode}`,
+                             { method: "POST" });
+    const data = await resp.json();
+    if (resp.ok && data.ok) {
+      showToast(`Launching <strong>${escapeHtml(mode)}</strong> for ${escapeHtml(id)}…`);
+    } else {
+      showCopyFallback(data.command || [], data.error || `HTTP ${resp.status}`);
+    }
+  } catch (e) {
+    showCopyFallback([], String(e));
+  }
+}
+
+function showCopyFallback(command, error) {
+  const cmdStr = Array.isArray(command) ? command.join(" ") : "";
+  showToast(
+    `Couldn't launch a terminal (${escapeHtml(error)}).<br>Run this yourself:` +
+    `<code class="cmd">${escapeHtml(cmdStr)}</code>` +
+    `<button id="toast-copy">Copy</button><button id="toast-close">Close</button>`,
+    true);
+  const copy = document.getElementById("toast-copy");
+  if (copy) copy.addEventListener("click", () => navigator.clipboard.writeText(cmdStr));
+  const close = document.getElementById("toast-close");
+  if (close) close.addEventListener("click", () => { $("#toast").hidden = true; });
+}
+
 function render() {
   const rows = sortSessions().map((s) => {
     const compact = s.compacted ? " ⟳" : "";
@@ -79,12 +118,22 @@ function render() {
       <td>${badge(s.outcome)}<br><small class="muted">${recency(s.last_activity)} · ${sizeBucket(s.message_count)}${compact}</small></td>
       <td>${ctxCell(s)}</td>
       <td class="muted">${recency(s.last_activity)}</td>
+      <td class="actions">
+        <button title="Resume (continue)" data-act="resume" data-id="${s.session_id}">▸</button>
+        <button title="Fork into new session" data-act="fork" data-id="${s.session_id}">⑂</button>
+      </td>
     </tr>`;
   }).join("");
   $("#rows").innerHTML = rows;
   $("#count").textContent = `${state.sessions.length} sessions`;
   for (const tr of document.querySelectorAll("#rows tr")) {
     tr.addEventListener("click", () => showDetail(tr.dataset.id));
+  }
+  for (const btn of document.querySelectorAll("#rows .actions button")) {
+    btn.addEventListener("click", (ev) => {
+      const mode = btn.dataset.act === "fork" ? "fork" : "continue";
+      resume(btn.dataset.id, mode, ev);
+    });
   }
 }
 
@@ -95,9 +144,17 @@ async function showDetail(id) {
   $("#detail-header").innerHTML =
     `<strong>${escapeHtml(tr.title)}</strong> · ${escapeHtml(tr.cwd || "")} · ${escapeHtml(tr.model || "")}
      · ${tr.context_pct != null ? tr.context_pct + "%" : ""}
-     <button id="copyid">copy id</button>`;
+     <button id="copyid">copy id</button>
+     <div class="resume-actions">
+       <button id="detail-resume">▸ Resume</button>
+       <button id="detail-fork">⑂ Fork</button>
+     </div>`;
   $("#entries").innerHTML = tr.entries.map(renderEntry).join("");
   $("#copyid").addEventListener("click", () => navigator.clipboard.writeText(tr.session_id));
+  document.getElementById("detail-resume")
+    .addEventListener("click", (ev) => resume(tr.session_id, "continue", ev));
+  document.getElementById("detail-fork")
+    .addEventListener("click", (ev) => resume(tr.session_id, "fork", ev));
   $("#list-view").hidden = true;
   $("#detail-view").hidden = false;
   window.scrollTo(0, 0);

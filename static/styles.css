@@ -55,3 +55,19 @@ tbody tr:hover { background: var(--panel); }
 .entry .role { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); }
 .entry pre { white-space: pre-wrap; word-break: break-word; margin: 0.3rem 0 0; }
 details summary { cursor: pointer; color: var(--muted); }
+.actions { white-space: nowrap; }
+.actions button {
+  background: transparent; border: 1px solid var(--line); border-radius: 6px;
+  padding: 0.15rem 0.4rem; margin-right: 0.25rem; cursor: pointer; color: var(--fg);
+}
+.actions button:hover { border-color: var(--accent); color: var(--accent); }
+#toast {
+  position: fixed; right: 1rem; bottom: 1rem; max-width: 32rem;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 0.6rem 0.8rem; color: var(--fg); z-index: 20;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+#toast .cmd { display: block; margin: 0.4rem 0; color: var(--muted);
+  white-space: pre-wrap; word-break: break-all; font-size: 0.8rem; }
+#toast button { margin-right: 0.4rem; }
+#detail-header .resume-actions { margin-top: 0.5rem; }
