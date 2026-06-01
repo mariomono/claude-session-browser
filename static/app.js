@@ -1,4 +1,4 @@
-let state = { sessions: [], sort: "last_activity", dir: -1, q: "", project: "" };
+let state = { sessions: [], sort: "last_activity", dir: -1, q: "", project: "", bookmarkedOnly: false };
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -6,6 +6,7 @@ async function fetchSessions(refresh = false) {
   const params = new URLSearchParams();
   if (state.q) params.set("q", state.q);
   if (state.project) params.set("project", state.project);
+  if (state.bookmarkedOnly) params.set("bookmarked", "true");
   if (refresh) params.set("refresh", "true");
   const resp = await fetch("/api/sessions?" + params.toString());
   const data = await resp.json();
@@ -107,10 +108,35 @@ function showCopyFallback(command, error) {
   if (close) close.addEventListener("click", () => { $("#toast").hidden = true; });
 }
 
+async function toggleBookmark(id, ev) {
+  if (ev) ev.stopPropagation();
+  try {
+    const resp = await fetch(`/api/sessions/${encodeURIComponent(id)}/bookmark`,
+                             { method: "POST" });
+    const data = await resp.json();
+    const s = state.sessions.find((x) => x.session_id === id);
+    if (s) s.bookmarked = data.bookmarked;
+    if (state.bookmarkedOnly && s && !data.bookmarked) {
+      fetchSessions();   // it dropped out of the filtered view
+    } else {
+      render();
+    }
+  } catch (e) {
+    showToast(`Bookmark failed: ${escapeHtml(String(e))}`);
+  }
+}
+
+function starMarkup(s) {
+  const on = s.bookmarked ? " on" : "";
+  const glyph = s.bookmarked ? "★" : "☆";
+  return `<button class="star-btn${on}" data-bm="${s.session_id}" title="Toggle bookmark">${glyph}</button>`;
+}
+
 function render() {
   const rows = sortSessions().map((s) => {
     const compact = s.compacted ? " ⟳" : "";
     return `<tr data-id="${s.session_id}">
+      <td class="star-col">${starMarkup(s)}</td>
       <td>${escapeHtml(s.title)}</td>
       <td class="muted">${escapeHtml(s.cwd || "—")}<br><small>${escapeHtml(s.git_branch || "")}</small></td>
       <td class="desc">${escapeHtml(s.first_prompt || "")}
@@ -135,14 +161,21 @@ function render() {
       resume(btn.dataset.id, mode, ev);
     });
   }
+  for (const btn of document.querySelectorAll("#rows .star-btn")) {
+    btn.addEventListener("click", (ev) => toggleBookmark(btn.dataset.bm, ev));
+  }
 }
 
 async function showDetail(id) {
   const resp = await fetch("/api/sessions/" + encodeURIComponent(id));
   if (!resp.ok) { alert("Could not load session"); return; }
   const tr = await resp.json();
+  const listed = state.sessions.find((x) => x.session_id === tr.session_id);
+  const bmGlyph = listed && listed.bookmarked ? "★" : "☆";
+  const bmOn = listed && listed.bookmarked ? " on" : "";
   $("#detail-header").innerHTML =
-    `<strong>${escapeHtml(tr.title)}</strong> · ${escapeHtml(tr.cwd || "")} · ${escapeHtml(tr.model || "")}
+    `<button class="star-btn${bmOn}" id="detail-star" title="Toggle bookmark">${bmGlyph}</button>
+     <strong>${escapeHtml(tr.title)}</strong> · ${escapeHtml(tr.cwd || "")} · ${escapeHtml(tr.model || "")}
      · ${tr.context_pct != null ? tr.context_pct + "%" : ""}
      <button id="copyid">copy id</button>
      <div class="resume-actions">
@@ -155,6 +188,15 @@ async function showDetail(id) {
     .addEventListener("click", (ev) => resume(tr.session_id, "continue", ev));
   document.getElementById("detail-fork")
     .addEventListener("click", (ev) => resume(tr.session_id, "fork", ev));
+  document.getElementById("detail-star").addEventListener("click", async (ev) => {
+    await toggleBookmark(tr.session_id, ev);
+    const s = state.sessions.find((x) => x.session_id === tr.session_id);
+    const star = document.getElementById("detail-star");
+    if (s && star) {
+      star.textContent = s.bookmarked ? "★" : "☆";
+      star.classList.toggle("on", s.bookmarked);
+    }
+  });
   $("#list-view").hidden = true;
   $("#detail-view").hidden = false;
   window.scrollTo(0, 0);
@@ -185,6 +227,11 @@ function init() {
     state.project = e.target.value; fetchSessions();
   });
   $("#rescan").addEventListener("click", () => fetchSessions(true));
+  $("#bookmarks-toggle").addEventListener("click", () => {
+    state.bookmarkedOnly = !state.bookmarkedOnly;
+    $("#bookmarks-toggle").classList.toggle("active", state.bookmarkedOnly);
+    fetchSessions();
+  });
   $("#back").addEventListener("click", () => {
     $("#detail-view").hidden = true; $("#list-view").hidden = false;
   });

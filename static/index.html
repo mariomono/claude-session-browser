@@ -12,6 +12,7 @@
     <div class="controls">
       <input id="search" type="search" placeholder="Search title / prompts…" />
       <select id="project"><option value="">All projects</option></select>
+      <button id="bookmarks-toggle" title="Show only bookmarked">★ Bookmarks</button>
       <button id="rescan" title="Re-scan logs">↻ Rescan</button>
     </div>
   </header>
@@ -21,6 +22,7 @@
       <table id="sessions">
         <thead>
           <tr>
+            <th class="star-col"></th>
             <th data-sort="title">Title</th>
             <th data-sort="cwd">Project</th>
             <th>Description</th>

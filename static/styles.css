@@ -71,3 +71,12 @@ details summary { cursor: pointer; color: var(--muted); }
   white-space: pre-wrap; word-break: break-all; font-size: 0.8rem; }
 #toast button { margin-right: 0.4rem; }
 #detail-header .resume-actions { margin-top: 0.5rem; }
+.star-col { width: 1.5rem; }
+.star-btn {
+  background: transparent; border: none; cursor: pointer; padding: 0;
+  font-size: 1.1rem; line-height: 1; color: var(--muted);
+}
+.star-btn.on { color: #f5c518; }   /* gold filled star */
+.star-btn:hover { color: #f5c518; }
+#bookmarks-toggle.active { border-color: #f5c518; color: #f5c518; }
+#detail-header .star-btn { font-size: 1.3rem; vertical-align: middle; }
