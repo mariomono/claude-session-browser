@@ -4,3 +4,4 @@ __pycache__/
 cache.json
 *.egg-info/
 config.json
+bookmarks.json
