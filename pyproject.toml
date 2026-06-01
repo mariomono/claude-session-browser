@@ -12,6 +12,16 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "httpx>=0.27"]
 
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# Only `app` is an importable package; `static/` holds runtime assets and must
+# not be treated as a package (otherwise setuptools flat-layout auto-discovery
+# fails with "Multiple top-level packages discovered: ['app', 'static']").
+packages = ["app"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
