@@ -45,6 +45,10 @@ def get_session(session_id: str):
 @app.post("/api/sessions/{session_id}/resume")
 def resume_session(session_id: str,
                    mode: str = Query("continue")):
+    # SECURITY: this endpoint spawns a host process (a terminal running claude).
+    # The server must stay bound to localhost (run.sh uses --host 127.0.0.1) and
+    # must never be exposed to a network. The session_id is validated against a
+    # strict regex by find_session_path below before it reaches any command.
     if mode not in ("continue", "fork"):
         raise HTTPException(status_code=400, detail="mode must be continue or fork")
     path = indexer.find_session_path(ROOT, session_id)

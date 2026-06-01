@@ -37,3 +37,7 @@ The launch command is configurable. Copy `config.example.json` to `config.json`
 `{claude}` are substituted as single argv tokens. The default opens a plain WSL
 window via `cmd.exe /c start … wsl.exe`. If the launch fails, the UI shows the
 exact command with a Copy button so you can run it yourself.
+
+> **Security:** the resume action spawns a process on your machine. Keep the
+> server bound to localhost (the default `run.sh` uses `--host 127.0.0.1`) and
+> do not expose it to a network.
