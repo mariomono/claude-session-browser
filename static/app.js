@@ -121,8 +121,10 @@ async function toggleBookmark(id, ev) {
     } else {
       render();
     }
+    return data.bookmarked;
   } catch (e) {
     showToast(`Bookmark failed: ${escapeHtml(String(e))}`);
+    return undefined;
   }
 }
 
@@ -189,12 +191,11 @@ async function showDetail(id) {
   document.getElementById("detail-fork")
     .addEventListener("click", (ev) => resume(tr.session_id, "fork", ev));
   document.getElementById("detail-star").addEventListener("click", async (ev) => {
-    await toggleBookmark(tr.session_id, ev);
-    const s = state.sessions.find((x) => x.session_id === tr.session_id);
+    const nowBookmarked = await toggleBookmark(tr.session_id, ev);
     const star = document.getElementById("detail-star");
-    if (s && star) {
-      star.textContent = s.bookmarked ? "★" : "☆";
-      star.classList.toggle("on", s.bookmarked);
+    if (star && nowBookmarked !== undefined) {
+      star.textContent = nowBookmarked ? "★" : "☆";
+      star.classList.toggle("on", nowBookmarked);
     }
   });
   $("#list-view").hidden = true;
