@@ -15,3 +15,9 @@ def test_transcript_roundtrip():
     dumped = t.model_dump()
     assert dumped["entries"][0]["role"] == "user"
     assert dumped["session_id"] == "abc"
+
+
+def test_session_index_bookmarked_defaults_false():
+    from app.models import SessionIndex
+    s = SessionIndex(session_id="abc", title="abc")
+    assert s.bookmarked is False

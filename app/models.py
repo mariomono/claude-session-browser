@@ -17,6 +17,7 @@ class SessionIndex(BaseModel):
     model: str | None = None
     outcome: str = "unknown"               # clean | interrupted | error | unknown
     compacted: bool = False
+    bookmarked: bool = False
     unparsable_lines: int = 0
     file_mtime: float = 0.0
     file_size: int = 0
