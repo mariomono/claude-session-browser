@@ -1,5 +1,7 @@
 # Claude Session Browser
 
+[![CI](https://github.com/mariomono/claude-session-browser/actions/workflows/ci.yml/badge.svg)](https://github.com/mariomono/claude-session-browser/actions/workflows/ci.yml)
+
 A local web page to browse Claude Code session logs from `~/.claude/projects/`.
 
 ## Run
