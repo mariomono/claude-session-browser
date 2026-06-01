@@ -41,3 +41,12 @@ exact command with a Copy button so you can run it yourself.
 > **Security:** the resume action spawns a process on your machine. Keep the
 > server bound to localhost (the default `run.sh` uses `--host 127.0.0.1`) and
 > do not expose it to a network.
+
+## Bookmarks
+
+Click the star in the first column to bookmark a session — it turns gold (★)
+when bookmarked, outlined (☆) when not. The same star appears in the transcript
+header. Bookmarks are stored server-side in `bookmarks.json` (gitignored).
+
+Use the **★ Bookmarks** toggle in the header to show only bookmarked sessions;
+click it again to show all. Search, sort, and the project filter still apply.
