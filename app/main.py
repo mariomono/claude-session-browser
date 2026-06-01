@@ -5,22 +5,26 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import config, indexer, launcher, parser
+from . import bookmarks, config, indexer, launcher, parser
 
 ROOT = indexer.default_root()
 _BASE = Path(__file__).resolve().parent.parent
 CACHE = _BASE / "cache.json"
 STATIC = _BASE / "static"
 CONFIG = config.load(_BASE / "config.json")
+BOOKMARKS = _BASE / "bookmarks.json"
 
 app = FastAPI(title="Claude Session Browser")
 
 
 @app.get("/api/sessions")
 def list_sessions(q: str | None = None, project: str | None = None,
-                  refresh: bool = False):
+                  refresh: bool = False, bookmarked: bool = False):
     all_sessions = indexer.build_index(ROOT, CACHE, force=refresh)
     projects = sorted({s.cwd for s in all_sessions if s.cwd})
+    marks = bookmarks.load(BOOKMARKS)
+    for s in all_sessions:
+        s.bookmarked = s.session_id in marks
     sessions = all_sessions
     if project:
         sessions = [s for s in sessions if s.cwd == project]
@@ -31,6 +35,8 @@ def list_sessions(q: str | None = None, project: str | None = None,
             if any(ql in (v or "").lower()
                    for v in (s.title, s.first_prompt, s.last_prompt))
         ]
+    if bookmarked:
+        sessions = [s for s in sessions if s.bookmarked]
     return {"sessions": [s.model_dump() for s in sessions], "projects": projects}
 
 
@@ -57,6 +63,14 @@ def resume_session(session_id: str,
     cwd = indexer.session_cwd(path) or str(Path.home())
     return launcher.resume_session(session_id, cwd, mode, CONFIG,
                                    spawn=launcher._default_spawn)
+
+
+@app.post("/api/sessions/{session_id}/bookmark")
+def bookmark_session(session_id: str):
+    path = indexer.find_session_path(ROOT, session_id)
+    if not path:
+        raise HTTPException(status_code=404, detail="session not found")
+    return {"bookmarked": bookmarks.toggle(BOOKMARKS, session_id)}
 
 
 @app.get("/")
