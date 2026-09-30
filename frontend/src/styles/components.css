@@ -459,9 +459,27 @@
   container: sessions / inline-size;
 }
 
-/* card mode only (see the container query below) */
+/* Compact stand-in for hidden sortable column headers. The component renders it
+   only while some `th[data-sort]` is display:none (measured, not breakpoint-bound),
+   so every sort stays reachable no matter which columns a rule hides. */
 .list-sort {
-  display: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.list-sort__label {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.list-sort__field {
+  flex: 1 1 auto;
+  max-width: 280px;
 }
 
 .table-card {
@@ -778,26 +796,6 @@
    Items flow and wrap, so nothing is ever cut off at any width; the
    actions keep one spot on every card. */
 @container sessions (width < 640px) {
-  .list-sort {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin-bottom: var(--space-3);
-  }
-
-  .list-sort__label {
-    color: var(--text-muted);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  .list-sort__field {
-    flex: 1 1 auto;
-    max-width: 280px;
-  }
-
   .table-card {
     border: 0;
     border-radius: 0;

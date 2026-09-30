@@ -1,4 +1,14 @@
-import { memo, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
+import {
+  memo,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { recency, sizeBucket, type SortKey } from "../format";
 import type { ResumeMode, SessionIndex } from "../types";
 import { OutcomeBadge } from "./Badge";
@@ -169,39 +179,66 @@ const SessionRow = memo(function SessionRow({ s, index, opening, onOpen, onResum
   );
 });
 
+/** True while any sortable column header is hidden by the responsive CSS.
+ *
+ * Measured from the DOM, not tied to any breakpoint: whatever current or future
+ * rule hides a `th[data-sort]` (a dropped column, card mode, a new column's own
+ * breakpoint), the compact sort control appears to stand in for it.
+ */
+function useHiddenSortableColumns(listRef: RefObject<HTMLDivElement | null>): boolean {
+  const [hidden, setHidden] = useState(false);
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const measure = () => {
+      const any = Array.from(list.querySelectorAll<HTMLElement>("th[data-sort]")).some((el) => el.offsetWidth === 0);
+      setHidden((prev) => (prev === any ? prev : any)); // only update on change, so the observer can't loop
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [listRef]);
+  return hidden;
+}
+
 export function SessionTable(props: Props) {
   const { sessions, sort, dir, onSort, onOpen, onResume, onToggleBookmark, openingId, skeleton, placeholder } = props;
 
   const th = { sort, dir, onSort };
   const order = dir === 1 ? "ascending" : "descending";
+  const listRef = useRef<HTMLDivElement>(null);
+  const sortControlNeeded = useHiddenSortableColumns(listRef);
 
   return (
-    <div className="session-list">
-      {/* Stands in for the column headers when the list is too narrow for a table (see components.css). */}
-      <div className="list-sort">
-        <label className="list-sort__label" htmlFor="sort-select">
-          Sort
-        </label>
-        <div className="field field--select list-sort__field">
-          <select id="sort-select" value={sort} onChange={(e) => onSort(e.target.value as SortKey)}>
-            {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
-              <option key={k} value={k}>
-                {SORT_LABELS[k]}
-              </option>
-            ))}
-          </select>
-          <Icon name="chevronDown" className="field__chevron" />
+    <div className="session-list" ref={listRef}>
+      {/* Stands in for whichever sortable column headers the responsive CSS has hidden. */}
+      {sortControlNeeded && (
+        <div className="list-sort">
+          <label className="list-sort__label" htmlFor="sort-select">
+            Sort
+          </label>
+          <div className="field field--select list-sort__field">
+            <select id="sort-select" value={sort} onChange={(e) => onSort(e.target.value as SortKey)}>
+              {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
+                <option key={k} value={k}>
+                  {SORT_LABELS[k]}
+                </option>
+              ))}
+            </select>
+            <Icon name="chevronDown" className="field__chevron" />
+          </div>
+          <button
+            type="button"
+            className="btn btn--icon"
+            title={`Sorted by ${SORT_LABELS[sort].toLowerCase()}, ${order}; click to reverse`}
+            aria-label={`Reverse sort order (now ${order})`}
+            onClick={() => onSort(sort)}
+          >
+            <Icon name={dir === 1 ? "sortUp" : "sortDown"} />
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn btn--icon"
-          title={`Sorted by ${SORT_LABELS[sort].toLowerCase()}, ${order}; click to reverse`}
-          aria-label={`Reverse sort order (now ${order})`}
-          onClick={() => onSort(sort)}
-        >
-          <Icon name={dir === 1 ? "sortUp" : "sortDown"} />
-        </button>
-      </div>
+      )}
       <div className="table-card">
         <table id="sessions" className="sessions">
           <thead>
