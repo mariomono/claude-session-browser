@@ -81,29 +81,31 @@ export function AppHeader(props: Props) {
           <Icon name="chevronDown" className="field__chevron" />
         </label>
 
-        <div className="app-header__actions">
-          <button
-            id="bookmarks-toggle"
-            type="button"
-            className="btn btn--toggle btn--star"
-            title="Show only bookmarked"
-            aria-pressed={props.bookmarkedOnly}
-            onClick={props.onToggleBookmarkedOnly}
-          >
-            <Icon name="star" filled={props.bookmarkedOnly} />
-            <span>Bookmarks</span>
-          </button>
-          <button
-            id="rescan"
-            type="button"
-            className={`btn${props.rescanning ? " is-busy" : ""}`}
-            title="Re-scan logs"
-            aria-busy={props.rescanning}
-            onClick={props.onRescan}
-          >
-            <Icon name="refresh" className="spin-on-busy" />
-            <span>Rescan</span>
-          </button>
+        <div className="app-header__tools">
+          <div className="app-header__actions">
+            <button
+              id="bookmarks-toggle"
+              type="button"
+              className="btn btn--toggle btn--star"
+              title="Show only bookmarked"
+              aria-pressed={props.bookmarkedOnly}
+              onClick={props.onToggleBookmarkedOnly}
+            >
+              <Icon name="star" filled={props.bookmarkedOnly} />
+              <span>Bookmarks</span>
+            </button>
+            <button
+              id="rescan"
+              type="button"
+              className={`btn${props.rescanning ? " is-busy" : ""}`}
+              title="Re-scan logs"
+              aria-busy={props.rescanning}
+              onClick={props.onRescan}
+            >
+              <Icon name="refresh" className="spin-on-busy" />
+              <span>Rescan</span>
+            </button>
+          </div>
           <ThemeSwitcher theme={props.theme} onChange={props.onTheme} />
         </div>
       </div>

@@ -7,7 +7,16 @@ import { ContextMeter } from "./Meter";
 import { SkeletonRows } from "./Skeleton";
 import { StarButton } from "./StarButton";
 
-const COLUMNS = 8;
+/** One class per column, in order; shared by header, rows and skeleton so responsive rules hit all three. */
+const COLUMNS = ["col-star", "col-title", "col-project", "col-desc", "col-state", "col-context", "col-when", "col-actions"] as const;
+/** Sortable columns in header order; the card list offers the same choices as a dropdown. */
+const SORT_LABELS: Record<SortKey, string> = {
+  title: "Title",
+  cwd: "Project",
+  outcome: "State",
+  context_pct: "Context",
+  last_activity: "Last active",
+};
 /** Rows that play the entrance animation; later ones start below the fold and appear as-is. */
 const ANIMATED_ROWS = 20;
 
@@ -100,7 +109,11 @@ const SessionRow = memo(function SessionRow({ s, index, opening, onOpen, onResum
         <span className="cell-title" title={s.title}>
           {s.title}
         </span>
-        {s.model && <span className="cell-sub mono">{s.model}</span>}
+        {s.model && (
+          <span className="cell-sub cell-model mono" title={s.model}>
+            {s.model}
+          </span>
+        )}
       </td>
       <td className="col-project">
         <span className="cell-path mono" title={s.cwd || undefined}>
@@ -109,7 +122,7 @@ const SessionRow = memo(function SessionRow({ s, index, opening, onOpen, onResum
         {s.git_branch && (
           <span className="cell-branch mono" title={s.git_branch}>
             <Icon name="branch" size={12} />
-            {s.git_branch}
+            <span className="cell-branch__name">{s.git_branch}</span>
           </span>
         )}
       </td>
@@ -160,50 +173,78 @@ export function SessionTable(props: Props) {
   const { sessions, sort, dir, onSort, onOpen, onResume, onToggleBookmark, openingId, skeleton, placeholder } = props;
 
   const th = { sort, dir, onSort };
+  const order = dir === 1 ? "ascending" : "descending";
 
   return (
-    <div className="table-card">
-      <table id="sessions" className="sessions">
-        <thead>
-          <tr>
-            <th className="col-star">
-              <span className="visually-hidden">Bookmark</span>
-            </th>
-            <SortableTh k="title" label="Title" className="col-title" {...th} />
-            <SortableTh k="cwd" label="Project" className="col-project" {...th} />
-            <th className="col-desc">
-              <span className="th-label">Description</span>
-            </th>
-            <SortableTh k="outcome" label="State" className="col-state" {...th} />
-            <SortableTh k="context_pct" label="Context" className="col-context" {...th} />
-            <SortableTh k="last_activity" label="Last active" className="col-when" {...th} />
-            <th className="col-actions">
-              <span className="th-label">Resume</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {skeleton ? (
-            <SkeletonRows columns={COLUMNS} />
-          ) : sessions.length === 0 && placeholder ? (
-            <tr className="placeholder-row">
-              <td colSpan={COLUMNS}>{placeholder}</td>
+    <div className="session-list">
+      {/* Stands in for the column headers when the list is too narrow for a table (see components.css). */}
+      <div className="list-sort">
+        <label className="list-sort__label" htmlFor="sort-select">
+          Sort
+        </label>
+        <div className="field field--select list-sort__field">
+          <select id="sort-select" value={sort} onChange={(e) => onSort(e.target.value as SortKey)}>
+            {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
+              <option key={k} value={k}>
+                {SORT_LABELS[k]}
+              </option>
+            ))}
+          </select>
+          <Icon name="chevronDown" className="field__chevron" />
+        </div>
+        <button
+          type="button"
+          className="btn btn--icon"
+          title={`Sorted by ${SORT_LABELS[sort].toLowerCase()}, ${order}; click to reverse`}
+          aria-label={`Reverse sort order (now ${order})`}
+          onClick={() => onSort(sort)}
+        >
+          <Icon name={dir === 1 ? "sortUp" : "sortDown"} />
+        </button>
+      </div>
+      <div className="table-card">
+        <table id="sessions" className="sessions">
+          <thead>
+            <tr>
+              <th className="col-star">
+                <span className="visually-hidden">Bookmark</span>
+              </th>
+              <SortableTh k="title" label={SORT_LABELS.title} className="col-title" {...th} />
+              <SortableTh k="cwd" label={SORT_LABELS.cwd} className="col-project" {...th} />
+              <th className="col-desc">
+                <span className="th-label">Description</span>
+              </th>
+              <SortableTh k="outcome" label={SORT_LABELS.outcome} className="col-state" {...th} />
+              <SortableTh k="context_pct" label={SORT_LABELS.context_pct} className="col-context" {...th} />
+              <SortableTh k="last_activity" label={SORT_LABELS.last_activity} className="col-when" {...th} />
+              <th className="col-actions">
+                <span className="th-label">Resume</span>
+              </th>
             </tr>
-          ) : (
-            sessions.map((s, i) => (
-              <SessionRow
-                key={s.session_id}
-                s={s}
-                index={i}
-                opening={openingId === s.session_id}
-                onOpen={onOpen}
-                onResume={onResume}
-                onToggleBookmark={onToggleBookmark}
-              />
-            ))
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {skeleton ? (
+              <SkeletonRows columns={COLUMNS} />
+            ) : sessions.length === 0 && placeholder ? (
+              <tr className="placeholder-row">
+                <td colSpan={COLUMNS.length}>{placeholder}</td>
+              </tr>
+            ) : (
+              sessions.map((s, i) => (
+                <SessionRow
+                  key={s.session_id}
+                  s={s}
+                  index={i}
+                  opening={openingId === s.session_id}
+                  onOpen={onOpen}
+                  onResume={onResume}
+                  onToggleBookmark={onToggleBookmark}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

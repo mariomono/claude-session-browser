@@ -28,6 +28,10 @@
   --line-height-tight: 1.25;
   --measure: 76ch;
 
+  /* page layout: side gutter grows with the viewport; header and main share one content box */
+  --gutter: clamp(12px, 2.4vw, 32px);
+  --content-max: 1760px;
+
   --font-system: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans", Ubuntu, Cantarell, sans-serif;
   --font-mono: "Fira Code", "Cascadia Code", "JetBrains Mono", "Source Code Pro", Consolas, Menlo, Monaco,
     "Ubuntu Mono", "DejaVu Sans Mono", monospace;

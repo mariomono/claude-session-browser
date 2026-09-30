@@ -170,21 +170,45 @@
   box-shadow: var(--shadow-header);
 }
 
+/* Wrap stages (the media queries under SMALL VIEWPORTS): one row here; brand + tools over
+   search + project below 1100px; icon-only tools below 640px; a third row below 480px. */
 .app-header__inner {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto minmax(200px, 560px) minmax(160px, 260px) minmax(0, 1fr) auto;
+  grid-template-areas: "brand search project . tools";
   align-items: center;
   gap: var(--space-3);
-  max-width: 1600px;
+  max-width: calc(var(--content-max) + 2 * var(--gutter));
   margin: 0 auto;
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-3) var(--gutter);
+}
+
+.app-header__inner > .brand {
+  grid-area: brand;
+}
+
+.app-header__inner > .field--search {
+  grid-area: search;
+}
+
+.app-header__inner > .field--select {
+  grid-area: project;
+  min-width: 0;
+}
+
+.app-header__tools {
+  grid-area: tools;
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: var(--space-2);
 }
 
 .app-header__actions {
+  grid-area: actions;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-left: auto;
 }
 
 .app-header__progress {
@@ -252,16 +276,6 @@
   position: relative;
   display: flex;
   align-items: center;
-}
-
-.field--search {
-  flex: 1 1 240px;
-  max-width: 420px;
-}
-
-.field--select {
-  flex: 0 1 220px;
-  min-width: 140px;
 }
 
 .field input,
@@ -334,7 +348,9 @@
 
 /* ── Theme switcher ────────────────────────────────────────── */
 .theme-switch {
+  grid-area: theme;
   display: inline-flex;
+  flex: none;
   gap: 2px;
   padding: 2px;
   border: var(--border-width) solid var(--border-well);
@@ -410,9 +426,11 @@
    LAYOUT + VIEW TRANSITIONS
    ═══════════════════════════════════════════════════════════════ */
 .app-main {
-  max-width: 1600px;
+  /* read by the transcript bar, which bleeds over this padding */
+  --main-pad-top: clamp(var(--space-3), 2.4vw, var(--space-5));
+  max-width: calc(var(--content-max) + 2 * var(--gutter));
   margin: 0 auto;
-  padding: var(--space-5);
+  padding: var(--main-pad-top) var(--gutter) var(--space-5);
 }
 
 /* fill-mode "backwards" leaves no transform behind once finished */
@@ -432,7 +450,20 @@
 
 /* ═══════════════════════════════════════════════════════════════
    SESSIONS TABLE
+   Sized by its own width (container "sessions"), not the viewport's:
+   ≥ 1400px every column · < 1400 no description · < 1120 no "last
+   active" (the state cell repeats it) · < 900 no context · < 640 the
+   rows become stacked cards and a sort dropdown replaces the headers.
    ═══════════════════════════════════════════════════════════════ */
+.session-list {
+  container: sessions / inline-size;
+}
+
+/* card mode only (see the container query below) */
+.list-sort {
+  display: none;
+}
+
 .table-card {
   background: var(--surface-raised);
   border: var(--border-width) solid var(--border);
@@ -442,8 +473,11 @@
   overflow: clip;
 }
 
+/* Fixed layout: columns take the widths below, the title takes the rest, and no cell's content
+   can widen the table past its card. */
 .sessions {
   width: 100%;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
 }
@@ -474,6 +508,7 @@
 
 .th-sort {
   width: 100%;
+  min-width: 0;
   border: 0;
   background: transparent;
   color: inherit;
@@ -482,6 +517,12 @@
   text-transform: inherit;
   cursor: pointer;
   transition: color var(--transition-fast);
+}
+
+.th-sort > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .th-sort:focus-visible {
@@ -567,6 +608,30 @@
   width: 44px;
 }
 
+.col-project {
+  width: 16%;
+}
+
+.col-desc {
+  width: 22%;
+}
+
+.col-state {
+  width: 156px;
+}
+
+.col-context {
+  width: 196px;
+}
+
+.col-when {
+  width: 144px;
+}
+
+.col-actions {
+  width: 92px;
+}
+
 .sessions td.col-star {
   padding-right: 0;
 }
@@ -575,13 +640,18 @@
   margin-top: -4px;
 }
 
-.cell-title {
-  display: -webkit-box;
-  max-width: 24rem;
+/* single-line cells: ellipsis, full text in the title tooltip */
+.cell-title,
+.cell-sub,
+.cell-path,
+.cell-branch {
   overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-title {
+  display: block;
   color: var(--text-primary);
   font-weight: 600;
   line-height: var(--line-height-tight);
@@ -594,14 +664,6 @@
   font-size: var(--text-xs);
 }
 
-.cell-path,
-.cell-branch {
-  max-width: 17rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* rtl on the box + an isolated ltr <bdi> inside: ellipsis eats the path's start, keeping its tail visible */
 .cell-path {
   display: block;
@@ -611,17 +673,20 @@
   font-size: var(--text-sm);
 }
 
+.cell-branch__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .cell-branch {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 4px;
   margin-top: var(--space-1);
   color: var(--text-muted);
   font-size: var(--text-xs);
-}
-
-.col-desc {
-  max-width: 30rem;
 }
 
 .desc-first,
@@ -633,6 +698,8 @@
   line-clamp: 2;
   font-size: var(--text-sm);
   line-height: 1.45;
+  /* long paths/commands break instead of widening the cell */
+  overflow-wrap: anywhere;
 }
 
 .desc-first {
@@ -650,16 +717,8 @@
   font-weight: 700;
 }
 
-.col-state {
-  white-space: nowrap;
-}
-
 .col-state .cell-sub {
   margin-top: 6px;
-}
-
-.col-context {
-  width: 150px;
 }
 
 .col-context .meter {
@@ -667,12 +726,10 @@
 }
 
 .col-when {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   font-size: var(--text-sm);
-}
-
-.col-actions {
-  width: 1%;
 }
 
 .row-actions {
@@ -685,22 +742,261 @@
   border: 0;
 }
 
-@media (max-width: 1180px) {
+@container sessions (width < 1400px) {
   .col-desc {
     display: none;
   }
+
+  .col-project {
+    width: 22%;
+  }
 }
 
-@media (max-width: 860px) {
-  .col-project,
+@container sessions (width < 1120px) {
   .col-when {
     display: none;
   }
 }
 
-@media (max-width: 600px) {
+@container sessions (width < 900px) {
   .col-context {
     display: none;
+  }
+
+  .col-project {
+    width: 28%;
+  }
+}
+
+/* ── Card mode: each row a stacked card ─────────────────────────
+   Same rows, restyled: star pinned top-left, then
+     title
+     model  project-path  branch
+     last prompt (2 lines)
+     state  context meter
+     recency · size ···················· resume fork
+   Items flow and wrap, so nothing is ever cut off at any width; the
+   actions keep one spot on every card. */
+@container sessions (width < 640px) {
+  .list-sort {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .list-sort__label {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .list-sort__field {
+    flex: 1 1 auto;
+    max-width: 280px;
+  }
+
+  .table-card {
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .sessions,
+  .sessions tbody,
+  .sessions td {
+    display: block;
+  }
+
+  .sessions thead {
+    display: none;
+  }
+
+  .sessions tbody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .sessions tbody tr {
+    --card-indent: calc(var(--space-1) + 36px + var(--space-1));
+    display: block;
+    position: relative;
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--card-indent);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-l);
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-sm), var(--shadow-inset);
+  }
+
+  .sessions td,
+  .sessions tbody tr:last-child td {
+    width: auto;
+    padding: 0;
+    border: 0;
+  }
+
+  .sessions tr.session-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px var(--space-2);
+    transition:
+      background-color var(--transition-fast),
+      box-shadow var(--transition-fast);
+  }
+
+  .session-row:hover td,
+  .session-row:hover td:first-child,
+  .session-row:focus-visible td,
+  .session-row:focus-visible td:first-child,
+  .session-row.is-opening td {
+    background: none;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .session-row:hover,
+  .session-row:focus-visible {
+    background: var(--surface-hover);
+    box-shadow: inset 3px 0 0 var(--accent), var(--shadow-sm), var(--shadow-inset);
+  }
+
+  .session-row:focus-visible {
+    outline-offset: 2px;
+  }
+
+  .session-row.is-opening {
+    background: var(--surface-active);
+    animation: pulse 1s var(--ease-default) infinite;
+  }
+
+  /* centred on the title's first line */
+  .session-row .col-star {
+    position: absolute;
+    top: calc(var(--space-3) + (var(--text-md) * var(--line-height-tight) - 36px) / 2);
+    left: var(--space-1);
+  }
+
+  .session-row .star-btn,
+  .row-actions .btn--icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .col-star .star-btn {
+    margin-top: 0;
+  }
+
+  .session-row .col-title,
+  .session-row .col-state {
+    display: contents;
+  }
+
+  .session-row .cell-title {
+    order: 1;
+    flex-basis: 100%;
+    font-size: var(--text-md);
+  }
+
+  .session-row .cell-model {
+    order: 2;
+    flex: 0 1 auto;
+    max-width: 45%;
+    margin: 0;
+  }
+
+  .session-row .col-project {
+    order: 2;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .session-row .cell-path {
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: var(--text-xs);
+  }
+
+  .session-row .cell-branch {
+    flex: none;
+    max-width: 40%;
+    margin: 0;
+  }
+
+  .session-row .col-desc {
+    order: 3;
+    display: block;
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
+  .session-row .col-desc:has(.desc-last:empty),
+  .session-row .desc-first,
+  .session-row .col-when {
+    display: none;
+  }
+
+  .session-row .desc-last {
+    margin: 0;
+  }
+
+  .session-row .badge {
+    order: 4;
+  }
+
+  .session-row .col-context {
+    order: 4;
+    display: block;
+  }
+
+  .session-row .col-context .meter {
+    margin-top: 0;
+  }
+
+  .session-row .meter__track {
+    width: 52px;
+  }
+
+  /* line break before the last line, whose items' negative top margin cancels the break's extra row gap */
+  .session-row::after {
+    content: "";
+    order: 5;
+    flex-basis: 100%;
+  }
+
+  .session-row .col-state .cell-sub {
+    order: 6;
+    flex: 0 1 auto;
+    min-width: 0;
+    margin: -6px 0 0;
+  }
+
+  .session-row .col-actions {
+    order: 6;
+    flex: none;
+    margin: -6px 0 0 auto;
+  }
+
+  .sessions tr.skeleton-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .skeleton-row td:not(.col-title, .col-project, .col-state) {
+    display: none;
+  }
+
+  .sessions tr.placeholder-row {
+    padding: 0;
   }
 }
 
@@ -898,8 +1194,8 @@
   position: sticky;
   top: var(--app-header-h);
   z-index: var(--z-sticky);
-  margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) 0;
-  padding: var(--space-3) var(--space-5);
+  margin: calc(-1 * var(--main-pad-top)) calc(-1 * var(--gutter)) 0;
+  padding: var(--space-3) var(--gutter);
   background: var(--surface-header);
   backdrop-filter: blur(12px) saturate(1.2);
   -webkit-backdrop-filter: blur(12px) saturate(1.2);
@@ -949,7 +1245,7 @@
 }
 
 .meta-item {
-  max-width: 34ch;
+  max-width: min(34ch, 100%);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1320,23 +1616,28 @@
 /* ═══════════════════════════════════════════════════════════════
    SMALL VIEWPORTS + REDUCED MOTION
    ═══════════════════════════════════════════════════════════════ */
-@media (max-width: 1280px) {
+/* Theme names only where the one-row header has room for them; swatches alone otherwise. */
+@media (max-width: 1439px) {
   .theme-switch__label {
     display: none;
   }
 }
 
-@media (max-width: 720px) {
-  .app-header__inner,
-  .app-main {
-    padding-left: var(--space-4);
-    padding-right: var(--space-4);
+/* Header stage 2: brand + tools, then search + project. */
+@media (max-width: 1099px) {
+  .app-header__inner {
+    grid-template-columns: auto minmax(0, 1fr) minmax(160px, 280px);
+    grid-template-areas:
+      "brand  tools  tools"
+      "search search project";
   }
+}
 
-  .transcript__bar {
-    margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-4)) 0;
-    padding-left: var(--space-4);
-    padding-right: var(--space-4);
+/* Header stage 3 (and transcript bar): icon-only buttons, touch-sized targets. */
+@media (max-width: 639px) {
+  .app-header__inner {
+    grid-template-columns: auto minmax(0, 1fr) minmax(128px, 38%);
+    gap: var(--space-2) var(--space-3);
   }
 
   .app-header .btn span,
@@ -1345,14 +1646,44 @@
   }
 
   .app-header .btn,
-  .transcript__actions .btn {
+  .transcript__bar .btn {
+    min-width: 36px;
+    height: 36px;
     padding: 0 var(--space-2);
   }
 
-  .field--search,
-  .field--select {
-    flex-basis: 100%;
-    max-width: none;
+  .field input,
+  .field select {
+    height: 38px;
+  }
+
+  .theme-switch__opt {
+    justify-content: center;
+    min-width: 34px;
+    height: 32px;
+  }
+}
+
+/* Header stage 4: brand + actions, search, then project + theme. */
+@media (max-width: 479px) {
+  .app-header__inner {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "brand   brand  actions"
+      "search  search search"
+      "project theme  theme";
+  }
+
+  .app-header__tools {
+    display: contents;
+  }
+
+  .app-header__actions {
+    justify-self: end;
+  }
+
+  .brand {
+    margin-right: 0;
   }
 }
 
