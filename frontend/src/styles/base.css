@@ -70,7 +70,8 @@ select {
 
 /* ── Ambient texture (Digital Rust §3): noise + scanlines ─────
    Fixed, non-interactive overlays; themes without texture set
-   --texture-display: none so nothing is painted at all. */
+   --texture-display: none so nothing is painted at all. Each sits on
+   its own compositor layer, painted once, so scrolling never repaints it. */
 body::before,
 body::after {
   content: "";
@@ -79,6 +80,8 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: var(--z-texture);
+  contain: strict;
+  will-change: transform;
 }
 
 body::before {
@@ -127,17 +130,17 @@ body::after {
   display: block;
 }
 
-/* ── Theme switch cross-fade (class set briefly by src/theme.ts) ── */
-.theme-switching,
-.theme-switching *,
-.theme-switching *::before,
-.theme-switching *::after {
-  transition:
-    background-color var(--duration-slow) var(--ease-default),
-    border-color var(--duration-slow) var(--ease-default),
-    color var(--duration-slow) var(--ease-default),
-    fill var(--duration-slow) var(--ease-default),
-    box-shadow var(--duration-slow) var(--ease-default) !important;
+/* ── Theme switch cross-fade (view transition started by src/theme.ts) ──
+   Two whole-page snapshots fade on the compositor; the page underneath
+   stays clickable while they do. */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--duration-slow);
+  animation-timing-function: var(--ease-default);
 }
 
 /* ── Keyframes (transform/opacity only) ────────────────────── */

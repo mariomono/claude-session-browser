@@ -13,6 +13,15 @@ import type { ResumeMode, SessionIndex, Transcript } from "./types";
 const SEARCH_DEBOUNCE_MS = 250;
 const TOAST_MS = 3000;
 
+/** A handler with a fixed identity that always runs the latest `fn`, so memoised children skip re-renders. */
+function useStableCallback<A extends unknown[], R>(fn: (...args: A) => R): (...args: A) => R {
+  const latest = useRef(fn);
+  useLayoutEffect(() => {
+    latest.current = fn;
+  });
+  return useCallback((...args: A) => latest.current(...args), []);
+}
+
 export default function App() {
   const [theme, setTheme] = useTheme();
   const [sessions, setSessions] = useState<SessionIndex[]>([]);
@@ -97,7 +106,7 @@ export default function App() {
     setSort(key);
   };
 
-  const resume = async (id: string, mode: ResumeMode) => {
+  const resume = useStableCallback(async (id: string, mode: ResumeMode) => {
     try {
       const { ok, status, data } = await api.resumeSession(id, mode);
       if (ok && data.ok) {
@@ -112,10 +121,10 @@ export default function App() {
     } catch (e) {
       showLaunchFailed([], String(e));
     }
-  };
+  });
 
   /** Toggle a bookmark; returns the new state, or undefined if the request failed. */
-  const toggleBookmark = async (id: string): Promise<boolean | undefined> => {
+  const toggleBookmark = useStableCallback(async (id: string): Promise<boolean | undefined> => {
     try {
       const { bookmarked } = await api.toggleBookmark(id);
       const listed = sessions.some((s) => s.session_id === id);
@@ -129,9 +138,9 @@ export default function App() {
       showMessage(`Bookmark failed: ${String(e)}`);
       return undefined;
     }
-  };
+  });
 
-  const openDetail = async (id: string) => {
+  const openDetail = useStableCallback(async (id: string) => {
     setOpeningId(id);
     let tr: Transcript | null = null;
     try {
@@ -148,7 +157,7 @@ export default function App() {
     setDetailBookmarked(listed?.bookmarked ?? false);
     listScroll.current = window.scrollY;
     setDetail(tr);
-  };
+  });
 
   const toggleDetailBookmark = async () => {
     if (!detail) return;

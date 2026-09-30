@@ -1,10 +1,22 @@
-import type { ResumeMode, Transcript } from "../types";
+import { memo } from "react";
+import type { ResumeMode, Transcript, TranscriptEntry as Entry } from "../types";
 import { OutcomeBadge } from "./Badge";
 import { CopyButton } from "./CopyButton";
 import { Icon } from "./Icon";
 import { ContextMeter } from "./Meter";
 import { StarButton } from "./StarButton";
 import { TranscriptEntry } from "./TranscriptEntry";
+
+/** The entry cards, memoised so header, toast and theme updates leave thousands of cards untouched. */
+const EntryList = memo(function EntryList({ entries }: { entries: Entry[] }) {
+  return (
+    <div id="entries" className="transcript__entries">
+      {entries.map((e, i) => (
+        <TranscriptEntry key={i} e={e} />
+      ))}
+    </div>
+  );
+});
 
 interface Props {
   transcript: Transcript;
@@ -58,11 +70,7 @@ export function TranscriptView({ transcript: tr, bookmarked, onBack, onResume, o
         </div>
       </div>
 
-      <div id="entries" className="transcript__entries">
-        {tr.entries.map((e, i) => (
-          <TranscriptEntry key={i} e={e} />
-        ))}
-      </div>
+      <EntryList entries={tr.entries} />
     </div>
   );
 }

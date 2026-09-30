@@ -25,8 +25,14 @@ export function AppHeader(props: Props) {
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const publish = () =>
-      document.documentElement.style.setProperty("--app-header-h", `${el.getBoundingClientRect().height}px`);
+    // Only on a real change: a new value on <html> restyles the whole document.
+    let published = "";
+    const publish = () => {
+      const h = `${el.getBoundingClientRect().height}px`;
+      if (h === published) return;
+      published = h;
+      document.documentElement.style.setProperty("--app-header-h", h);
+    };
     publish();
     const ro = new ResizeObserver(publish);
     ro.observe(el);

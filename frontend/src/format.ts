@@ -12,12 +12,20 @@ export function recency(ts: string | null): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** Built once: toLocaleTimeString with options builds a new formatter on every call. */
+const CLOCK_FORMAT = new Intl.DateTimeFormat(undefined, {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
 /** Local wall-clock time (HH:MM:SS) of an ISO timestamp, or "" when missing/invalid. */
 export function clockTime(ts: string | null): string {
   if (!ts) return "";
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  return CLOCK_FORMAT.format(d);
 }
 
 export function sizeBucket(n: number): "S" | "M" | "L" {
