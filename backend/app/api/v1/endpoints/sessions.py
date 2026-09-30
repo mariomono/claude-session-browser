@@ -43,7 +43,11 @@ def get_session(session_id: str, settings: SettingsDep) -> Transcript:
     path = indexer.find_session_path(settings.claude_projects_dir, session_id)
     if not path:
         raise HTTPException(status_code=404, detail="session not found")
-    return parser.parse_transcript(path)
+    try:
+        return parser.load_transcript(path)
+    except FileNotFoundError:
+        # Deleted between the path lookup and the read.
+        raise HTTPException(status_code=404, detail="session not found")
 
 
 @router.post("/{session_id}/resume")

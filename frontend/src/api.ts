@@ -20,9 +20,9 @@ export async function listSessions(query: SessionQuery): Promise<SessionList> {
   return resp.json();
 }
 
-/** Returns null when the session cannot be loaded (non-2xx response). */
-export async function getTranscript(id: string): Promise<Transcript | null> {
-  const resp = await fetch(`${BASE}/${encodeURIComponent(id)}`);
+/** Returns null when the session cannot be loaded (non-2xx response); rejects when `signal` aborts. */
+export async function getTranscript(id: string, signal?: AbortSignal): Promise<Transcript | null> {
+  const resp = await fetch(`${BASE}/${encodeURIComponent(id)}`, { signal });
   if (!resp.ok) return null;
   return resp.json();
 }

@@ -44,6 +44,8 @@ export default function App() {
   const toastTimer = useRef<number | undefined>(undefined);
   const requestSeq = useRef(0);
   const listScroll = useRef(0);
+  /** In-flight transcript fetch, aborted when superseded or when the view it was for goes away. */
+  const transcriptFetch = useRef<{ id: string; controller: AbortController } | null>(null);
 
   const showMessage = useCallback((content: ReactNode) => {
     window.clearTimeout(toastTimer.current);
@@ -97,7 +99,13 @@ export default function App() {
     window.scrollTo(0, detail ? 0 : listScroll.current);
   }, [detail]);
 
-  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(toastTimer.current);
+      transcriptFetch.current?.controller.abort();
+    },
+    [],
+  );
 
   const sorted = useMemo(() => sortSessions(sessions, sort, dir), [sessions, sort, dir]);
 
@@ -140,14 +148,27 @@ export default function App() {
     }
   });
 
+  const cancelTranscriptFetch = () => {
+    transcriptFetch.current?.controller.abort();
+    transcriptFetch.current = null;
+    setOpeningId(null);
+  };
+
   const openDetail = useStableCallback(async (id: string) => {
+    // Re-clicking a loading row aborts and retries: only one fetch is ever in
+    // flight, and a hung request can be kicked instead of waiting out the proxy.
+    cancelTranscriptFetch();
+    const controller = new AbortController();
+    transcriptFetch.current = { id, controller };
     setOpeningId(id);
     let tr: Transcript | null = null;
     try {
-      tr = await api.getTranscript(id);
+      tr = await api.getTranscript(id, controller.signal);
     } catch {
       tr = null;
     }
+    if (controller.signal.aborted) return; // superseded; the newer request owns the state
+    transcriptFetch.current = null;
     setOpeningId(null);
     if (!tr) {
       showMessage("Could not load session");
@@ -245,7 +266,10 @@ export default function App() {
             <TranscriptView
               transcript={detail}
               bookmarked={detailBookmarked}
-              onBack={() => setDetail(null)}
+              onBack={() => {
+                cancelTranscriptFetch();
+                setDetail(null);
+              }}
               onResume={resume}
               onToggleBookmark={toggleDetailBookmark}
             />

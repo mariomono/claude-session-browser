@@ -1,4 +1,4 @@
-import { memo, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
+import { memo, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { recency, sizeBucket, type SortKey } from "../format";
 import type { ResumeMode, SessionIndex } from "../types";
 import { OutcomeBadge } from "./Badge";
@@ -8,6 +8,8 @@ import { SkeletonRows } from "./Skeleton";
 import { StarButton } from "./StarButton";
 
 const COLUMNS = 8;
+/** Rows that play the entrance animation; later ones start below the fold and appear as-is. */
+const ANIMATED_ROWS = 20;
 
 interface Props {
   sessions: SessionIndex[];
@@ -67,6 +69,8 @@ interface SessionRowProps {
 
 /** One session; memoised, so typing, toasts and other rows' changes skip it (callbacks must be stable). */
 const SessionRow = memo(function SessionRow({ s, index, opening, onOpen, onResume, onToggleBookmark }: SessionRowProps) {
+  // Decided once at mount, so re-sorting never replays the entrance on rows that move up.
+  const [enters] = useState(index < ANIMATED_ROWS);
   const stop = (fn: () => void) => (ev: MouseEvent) => {
     ev.stopPropagation();
     fn();
@@ -82,8 +86,8 @@ const SessionRow = memo(function SessionRow({ s, index, opening, onOpen, onResum
 
   return (
     <tr
-      className={`session-row${opening ? " is-opening" : ""}`}
-      style={{ "--row-i": Math.min(index, 20) } as CSSProperties}
+      className={`session-row${enters ? " session-row--enter" : ""}${opening ? " is-opening" : ""}`}
+      style={enters ? ({ "--row-i": index } as CSSProperties) : undefined}
       tabIndex={0}
       aria-busy={opening}
       onClick={() => onOpen(s.session_id)}

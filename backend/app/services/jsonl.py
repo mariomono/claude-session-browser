@@ -23,6 +23,28 @@ def iter_records(path: Path) -> Iterator[dict]:
                 yield obj
 
 
+def iter_chunk_records(data: bytes) -> Iterator[dict | None]:
+    """Yield each record in a block of raw session-file bytes, or None for an unparsable line.
+
+    Lines are split and decoded the way ``read_records`` reads a file in text mode: ``\\n``,
+    ``\\r\\n`` and a lone ``\\r`` all end a line, and invalid UTF-8 is replaced. The block must
+    start at a line start and end at a line end (or at end of file), so a file fed through here
+    block by block yields the same records and unparsable lines as ``read_records``.
+    """
+    for raw in data.split(b"\n"):
+        # Decoding line by line keeps all-ASCII lines compact str objects, which json parses faster.
+        for piece in raw.split(b"\r") if b"\r" in raw else (raw,):
+            line = piece.decode("utf-8", errors="replace").strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                yield None
+                continue
+            yield obj if isinstance(obj, dict) else None
+
+
 def read_records(path: Path) -> tuple[list[dict], int]:
     """Return (records, unparsable_line_count)."""
     records: list[dict] = []

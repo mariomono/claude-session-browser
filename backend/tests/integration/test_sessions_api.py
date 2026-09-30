@@ -72,3 +72,12 @@ def test_cache_written_to_data_dir(client, settings):
     assert not settings.data_dir.exists()
     client.get("/api/v1/sessions")
     assert settings.cache_path.exists()
+
+
+def test_get_transcript_deleted_between_lookup_and_read_gives_404(client, monkeypatch):
+    def _vanished(path):
+        raise FileNotFoundError(path)
+
+    monkeypatch.setattr("app.services.parser.load_transcript", _vanished)
+    resp = client.get("/api/v1/sessions/sess1")
+    assert resp.status_code == 404

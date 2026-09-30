@@ -527,8 +527,16 @@
 
 .session-row {
   cursor: pointer;
+}
+
+/* Entrance only on the first screenful of rows (see ANIMATED_ROWS); the rest appear as-is. */
+.session-row--enter {
   animation: row-in var(--duration-slow) var(--ease-out) backwards;
   animation-delay: calc(var(--row-i, 0) * 18ms);
+}
+
+.session-row:not(.session-row--enter) .meter__fill {
+  animation: none;
 }
 
 .session-row:hover td,
@@ -988,7 +996,9 @@
   border-radius: var(--radius-m);
   background: var(--surface-raised);
   box-shadow: var(--shadow-sm);
-  /* long transcripts: skip layout/paint of off-screen cards */
+  /* Long transcripts: skip layout/paint of off-screen cards. "auto" always contains each card, so a
+     collapsible animating its height re-flows only the column's positions, never other cards' insides;
+     the intrinsic size (replaced by the real one once rendered) keeps the scrollbar and anchoring steady. */
   content-visibility: auto;
   contain-intrinsic-size: auto 120px;
 }
@@ -1187,6 +1197,8 @@
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   line-height: 1.55;
+  /* the region's per-frame height change never re-lays out this (possibly huge) text */
+  contain: content;
   opacity: 0;
   transform: translateY(-4px);
   transition:

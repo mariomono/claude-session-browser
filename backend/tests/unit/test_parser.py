@@ -1,3 +1,7 @@
+import json
+import time
+from concurrent.futures import ThreadPoolExecutor
+
 from app.services import parser
 
 
@@ -83,3 +87,67 @@ def test_parse_transcript_marks_sidechain(write_session):
     )
     tr = parser.parse_transcript(path)
     assert tr.entries[0].is_sidechain is True
+
+
+def _count_parses(monkeypatch):
+    calls = []
+    real = parser.parse_transcript
+
+    def _spy(path):
+        calls.append(path)
+        return real(path)
+
+    monkeypatch.setattr(parser, "parse_transcript", _spy)
+    return calls
+
+
+def _prompt(text_str):
+    return {"type": "user", "timestamp": "t1", "message": {"role": "user", "content": text_str}}
+
+
+def test_load_transcript_reuses_parse_of_unchanged_file(write_session, monkeypatch):
+    path = write_session([_prompt("hello")], session_id="cached")
+    calls = _count_parses(monkeypatch)
+    first = parser.load_transcript(path)
+    assert parser.load_transcript(path) is first
+    assert len(calls) == 1
+    assert first.model_dump() == parser.parse_transcript(path).model_dump()
+
+
+def test_load_transcript_reparses_appended_file(write_session, monkeypatch):
+    path = write_session([_prompt("hello")], session_id="grows")
+    calls = _count_parses(monkeypatch)
+    parser.load_transcript(path)
+    with path.open("a") as fh:
+        fh.write(json.dumps(_prompt("appended")) + "\n")
+    tr = parser.load_transcript(path)
+    assert len(calls) == 2
+    assert [e.content for e in tr.entries] == ["hello", "appended"]
+
+
+def test_load_transcript_evicts_least_recently_used(write_session, monkeypatch):
+    paths = [write_session([_prompt("hi")], session_id=f"lru{i}") for i in range(parser._CACHE_SIZE + 1)]
+    calls = _count_parses(monkeypatch)
+    for p in paths:
+        parser.load_transcript(p)
+    parser.load_transcript(paths[-1])  # still cached
+    assert len(calls) == len(paths)
+    parser.load_transcript(paths[0])  # evicted by the last one
+    assert len(calls) == len(paths) + 1
+
+
+def test_concurrent_load_transcript_parses_once(write_session, monkeypatch):
+    path = write_session([_prompt("hello")], session_id="concurrent")
+    calls = []
+    real = parser.parse_transcript
+
+    def _slow(p):
+        calls.append(p)
+        time.sleep(0.2)
+        return real(p)
+
+    monkeypatch.setattr(parser, "parse_transcript", _slow)
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(lambda _: parser.load_transcript(path), range(4)))
+    assert len(calls) == 1
+    assert all(r is results[0] for r in results)

@@ -40,3 +40,20 @@ def test_iter_records_skips_non_dict_json(tmp_path):
     f = tmp_path / "s.jsonl"
     f.write_text('"x"\n{"a": 1}\n[2]\n')
     assert list(jsonl.iter_records(f)) == [{"a": 1}]
+
+
+def test_iter_chunk_records_matches_text_mode_reader(tmp_path):
+    f = tmp_path / "s.jsonl"
+    f.write_bytes(
+        b'{"n": 1}\r\n'  # CRLF
+        b'{"n": 2}\r{"n": 3}\n'  # a lone CR ends a line too
+        b'  \n'
+        b'{"n": "\xff\xfe"}\n'  # invalid UTF-8 is replaced, not fatal
+        b"[1, 2]\n"  # valid JSON but not an object -> unparsable
+        b"bad\n"
+        b'{"n": 4}'  # no trailing newline
+    )
+    records, bad = jsonl.read_records(f)
+    chunked = list(jsonl.iter_chunk_records(f.read_bytes()))
+    assert [r for r in chunked if r is not None] == records
+    assert chunked.count(None) == bad == 2
