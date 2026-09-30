@@ -12,6 +12,14 @@ export function recency(ts: string | null): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** Local wall-clock time (HH:MM:SS) of an ISO timestamp, or "" when missing/invalid. */
+export function clockTime(ts: string | null): string {
+  if (!ts) return "";
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+}
+
 export function sizeBucket(n: number): "S" | "M" | "L" {
   if (n <= 10) return "S";
   if (n <= 60) return "M";

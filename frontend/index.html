@@ -1,9 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="rust">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Claude Sessions</title>
+  <script>
+    // Apply the saved theme before first paint (key and default mirror src/theme.ts).
+    (function () {
+      var theme = "rust";
+      try {
+        var saved = localStorage.getItem("csb-theme");
+        if (saved === "rust" || saved === "dark" || saved === "light" || saved === "cyber") theme = saved;
+      } catch (e) {}
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
 </head>
 <body>
   <div id="root"></div>

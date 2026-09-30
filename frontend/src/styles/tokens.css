@@ -1,0 +1,459 @@
+/* ─────────────────────────────────────────────────────────────
+   Design tokens.
+   Components consume only the semantic layer below; each theme
+   is a [data-theme] block on <html> that assigns those tokens.
+   Text/surface pairs are chosen for >= 4.5:1 on body text; state
+   washes are composited over an opaque surface (see .badge), never
+   placed straight under small text on an arbitrary background.
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Theme-independent scales ──────────────────────────────── */
+:root {
+  /* spacing: 4/8px rhythm */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* type */
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --line-height: 1.55;
+  --line-height-tight: 1.25;
+  --measure: 76ch;
+
+  --font-system: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans", Ubuntu, Cantarell, sans-serif;
+  --font-mono: "Fira Code", "Cascadia Code", "JetBrains Mono", "Source Code Pro", Consolas, Menlo, Monaco,
+    "Ubuntu Mono", "DejaVu Sans Mono", monospace;
+
+  /* motion */
+  --duration-fast: 150ms;
+  --duration-slow: 400ms;
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: var(--duration-fast) var(--ease-default);
+
+  /* layering */
+  --z-header: 20;
+  --z-sticky: 10;
+  --z-toast: 40;
+  --z-texture: 100;
+
+  /* overwritten at runtime with the measured app-header height */
+  --app-header-h: 64px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RUST (default)
+   Digital Rust by Kat Suricata (Apache-2.0),
+   https://digitalrust.katsuricata.com/ — palette and semantic
+   assignments follow Digital Rust Specification v1.2.1, including
+   its WCAG-AA text variants.
+   ═══════════════════════════════════════════════════════════════ */
+:root,
+:root[data-theme="rust"] {
+  color-scheme: dark;
+
+  /* raw palette */
+  --dr-ghost-pixel: #f7eae8;
+  --dr-phosphor-smoke: #efd5d1;
+  --dr-phantom-current: #e7c0ba;
+  --dr-copper-trace: #d7968c;
+  --dr-fatal-error: #cf8175;
+  --dr-amber-alert: #bf5747;
+  --dr-firewall-breach: #b74230;
+  --dr-rust: #af2e1a;
+  --dr-dark-packet: #691b0f;
+  --dr-surface-active: #5a1810;
+  --dr-bad-sector: #46120a;
+  --dr-core-meltdown: #340d07;
+  --dr-null-pointer: #230905;
+  --dr-horizon: #110402;
+  --dr-memory-leek: #8fa667;
+  --dr-stack-overglow: #d4a759;
+  --dr-blue-screen: #8791b0;
+  --dr-fractured-shell: #ba5a7d;
+  --dr-dead-thread: #6fa5a0;
+  --dr-text-tertiary: #c9a39c;
+
+  /* surfaces */
+  --surface-base: var(--dr-horizon);
+  --surface-sunken: var(--dr-horizon);
+  --surface-raised: var(--dr-null-pointer);
+  --surface-overlay: var(--dr-core-meltdown);
+  --surface-hover: var(--dr-bad-sector);
+  --surface-active: var(--dr-surface-active);
+  --surface-header: rgb(17 4 2 / 88%);
+
+  /* text */
+  --text-primary: var(--dr-ghost-pixel);
+  --text-secondary: var(--dr-phosphor-smoke);
+  --text-muted: var(--dr-text-tertiary);
+  --text-heading: var(--dr-fatal-error);
+  --text-on-accent: var(--dr-ghost-pixel);
+
+  /* accents */
+  --accent: var(--dr-rust);
+  --accent-hover: var(--dr-firewall-breach);
+  --accent-text: var(--dr-fatal-error);
+  --accent-secondary: var(--dr-copper-trace);
+  --accent-wash: rgb(175 46 26 / 22%);
+
+  /* states (text-grade) + washes */
+  --state-success: var(--dr-memory-leek);
+  --state-warning: var(--dr-stack-overglow);
+  --state-danger: #dc7a6c; /* AA on the danger wash; Amber Alert Text lifted one step */
+  --state-info: var(--dr-dead-thread);
+  --state-success-wash: rgb(143 166 103 / 15%);
+  --state-success-edge: rgb(143 166 103 / 30%);
+  --state-warning-wash: rgb(212 167 89 / 15%);
+  --state-warning-edge: rgb(212 167 89 / 30%);
+  --state-danger-wash: rgb(191 87 71 / 15%);
+  --state-danger-edge: rgb(191 87 71 / 35%);
+  --state-info-wash: rgb(111 165 160 / 15%);
+  --state-info-edge: rgb(111 165 160 / 30%);
+  --star: var(--dr-stack-overglow);
+
+  /* transcript roles */
+  --role-user: var(--dr-copper-trace);
+  --role-assistant: var(--dr-dead-thread);
+  --role-system: var(--dr-blue-screen);
+  --role-tool: var(--dr-stack-overglow);
+  --role-thinking: #c97e9a; /* Fractured Shell, lifted for AA */
+
+  /* borders */
+  --border: var(--dr-dark-packet);
+  --border-subtle: var(--dr-bad-sector);
+  --border-well: var(--dr-bad-sector);
+  --border-hover: var(--dr-rust);
+  --border-width: 2px;
+
+  /* focus */
+  --focus-color: var(--dr-stack-overglow);
+  --focus-ring: 2px solid var(--focus-color);
+  --focus-offset: 2px;
+
+  /* elevation: offset "hard" shadows + glow */
+  --shadow-sm: 2px 2px 0 0 var(--dr-bad-sector);
+  --shadow-md: 3px 3px 0 0 var(--dr-bad-sector);
+  --shadow-lg: 4px 4px 0 0 var(--dr-bad-sector);
+  --shadow-hover: 4px 4px 0 0 var(--dr-bad-sector);
+  --shadow-press: 0 0 0 0 var(--dr-bad-sector);
+  --shadow-glow: 0 0 10px rgb(175 46 26 / 40%);
+  --shadow-inset: inset 0 1px 0 rgb(255 255 255 / 10%);
+  --shadow-header: 0 2px 0 0 var(--dr-null-pointer);
+
+  /* interaction physics */
+  --press-hover: translate(-2px, -2px);
+  --press-active: translate(2px, 2px);
+
+  /* shape + type personality */
+  --radius-s: 2px;
+  --radius-m: 4px;
+  --radius-l: 6px;
+  --radius-pill: 4px;
+  --font-ui: "Optima", "Optima Nova", "Candara", "Gill Sans Nova", "Gill Sans", "Calibri", "Ubuntu", "Cantarell",
+    "Noto Sans", "Trebuchet MS", sans-serif;
+  --font-display: var(--font-mono);
+  --label-transform: uppercase;
+  --label-tracking: 0.06em;
+
+  /* components */
+  --meter-track: var(--dr-horizon);
+  --meter-fill: var(--dr-stack-overglow);
+  --meter-danger: var(--dr-amber-alert);
+  --skeleton-base: var(--dr-null-pointer);
+  --skeleton-shine: rgb(239 213 209 / 6%);
+  --selection: rgb(105 27 15 / 70%);
+  --scrollbar-thumb: var(--dr-dark-packet);
+
+  /* texture */
+  --scanline: rgb(175 46 26 / 3%);
+  --noise-opacity: 0.02;
+  --texture-display: block;
+  --backdrop: radial-gradient(1100px 520px at 50% -180px, rgb(175 46 26 / 14%), transparent 70%);
+  --brand-cursor: inline-block;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK — neutral graphite, one restrained steel-indigo accent,
+   soft shadows.
+   ═══════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface-base: #111214;
+  --surface-sunken: #0c0d0f;
+  --surface-raised: #18191d;
+  --surface-overlay: #1f2025;
+  --surface-hover: #222328;
+  --surface-active: #2b2d33;
+  --surface-header: rgb(17 18 20 / 82%);
+
+  --text-primary: #ececef;
+  --text-secondary: #c4c6cd;
+  --text-muted: #9b9ea8;
+  --text-heading: #c4c6cd;
+  --text-on-accent: #ffffff;
+
+  --accent: #4a6bd6;
+  --accent-hover: #3f5fc8;
+  --accent-text: #93adff;
+  --accent-secondary: #93adff;
+  --accent-wash: rgb(90 122 224 / 16%);
+
+  --state-success: #6cc990;
+  --state-warning: #e3b55f;
+  --state-danger: #f27d7d;
+  --state-info: #6fbde0;
+  --state-success-wash: rgb(108 201 144 / 12%);
+  --state-success-edge: rgb(108 201 144 / 28%);
+  --state-warning-wash: rgb(227 181 95 / 12%);
+  --state-warning-edge: rgb(227 181 95 / 28%);
+  --state-danger-wash: rgb(242 125 125 / 12%);
+  --state-danger-edge: rgb(242 125 125 / 30%);
+  --state-info-wash: rgb(111 189 224 / 12%);
+  --state-info-edge: rgb(111 189 224 / 28%);
+  --star: #f0c350;
+
+  --role-user: #93adff;
+  --role-assistant: #6cc990;
+  --role-system: #a4a8b3;
+  --role-tool: #e3b55f;
+  --role-thinking: #c49bf0;
+
+  --border: #2c2e35;
+  --border-subtle: #232429;
+  --border-well: #2c2e35;
+  --border-hover: #464a56;
+  --border-width: 1px;
+
+  --focus-color: #93adff;
+  --focus-ring: 2px solid var(--focus-color);
+  --focus-offset: 2px;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 35%);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 14px rgb(0 0 0 / 28%);
+  --shadow-lg: 0 2px 4px rgb(0 0 0 / 30%), 0 12px 32px rgb(0 0 0 / 40%);
+  --shadow-hover: 0 2px 4px rgb(0 0 0 / 35%), 0 6px 16px rgb(0 0 0 / 30%);
+  --shadow-press: 0 1px 1px rgb(0 0 0 / 30%);
+  --shadow-glow: 0 0 0 3px rgb(90 122 224 / 22%);
+  --shadow-inset: inset 0 1px 0 rgb(255 255 255 / 4%);
+  --shadow-header: 0 1px 0 0 #232429;
+
+  --press-hover: translateY(-1px);
+  --press-active: scale(0.97);
+
+  --radius-s: 3px;
+  --radius-m: 6px;
+  --radius-l: 8px;
+  --radius-pill: 999px;
+  --font-ui: var(--font-system);
+  --font-display: var(--font-system);
+  --label-transform: none;
+  --label-tracking: 0;
+
+  --meter-track: #0c0d0f;
+  --meter-fill: #6f8ef0;
+  --meter-danger: #f27d7d;
+  --skeleton-base: #1c1d22;
+  --skeleton-shine: rgb(255 255 255 / 5%);
+  --selection: rgb(90 122 224 / 35%);
+  --scrollbar-thumb: #34363e;
+
+  --scanline: transparent;
+  --noise-opacity: 0;
+  --texture-display: none;
+  --backdrop: none;
+  --brand-cursor: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT — paper and ink, muted rust accent as the brand tie-in.
+   ═══════════════════════════════════════════════════════════════ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-base: #f6f4f0;
+  --surface-sunken: #efece7;
+  --surface-raised: #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-hover: #f5f1eb;
+  --surface-active: #ebe4db;
+  --surface-header: rgb(246 244 240 / 86%);
+
+  --text-primary: #1c1917;
+  --text-secondary: #44403b;
+  --text-muted: #69625b;
+  --text-heading: #44403b;
+  --text-on-accent: #ffffff;
+
+  --accent: #a3402d;
+  --accent-hover: #8c3525;
+  --accent-text: #9b3a28;
+  --accent-secondary: #c26a55;
+  --accent-wash: rgb(163 64 45 / 10%);
+
+  --state-success: #2a7139;
+  --state-warning: #8a5d00;
+  --state-danger: #b3261e;
+  --state-info: #1b6c78;
+  --state-success-wash: rgb(42 113 57 / 10%);
+  --state-success-edge: rgb(42 113 57 / 28%);
+  --state-warning-wash: rgb(170 120 0 / 12%);
+  --state-warning-edge: rgb(170 120 0 / 32%);
+  --state-danger-wash: rgb(179 38 30 / 9%);
+  --state-danger-edge: rgb(179 38 30 / 26%);
+  --state-info-wash: rgb(27 108 120 / 10%);
+  --state-info-edge: rgb(27 108 120 / 28%);
+  --star: #b07700;
+
+  --role-user: #9b3a28;
+  --role-assistant: #1b6c78;
+  --role-system: #5c6270;
+  --role-tool: #8a5d00;
+  --role-thinking: #7a3f9e;
+
+  --border: #e0dad2;
+  --border-subtle: #ebe6df;
+  --border-well: #d9d2c8;
+  --border-hover: #bfb5a8;
+  --border-width: 1px;
+
+  --focus-color: #a3402d;
+  --focus-ring: 2px solid var(--focus-color);
+  --focus-offset: 2px;
+
+  --shadow-sm: 0 1px 2px rgb(60 40 20 / 7%);
+  --shadow-md: 0 1px 2px rgb(60 40 20 / 6%), 0 3px 10px rgb(60 40 20 / 6%);
+  --shadow-lg: 0 2px 6px rgb(60 40 20 / 8%), 0 14px 36px rgb(60 40 20 / 12%);
+  --shadow-hover: 0 2px 4px rgb(60 40 20 / 8%), 0 6px 16px rgb(60 40 20 / 8%);
+  --shadow-press: 0 1px 1px rgb(60 40 20 / 8%);
+  --shadow-glow: 0 0 0 3px rgb(163 64 45 / 14%);
+  --shadow-inset: inset 0 1px 0 rgb(255 255 255 / 70%);
+  --shadow-header: 0 1px 0 0 #e7e1d9;
+
+  --press-hover: translateY(-1px);
+  --press-active: scale(0.97);
+
+  --radius-s: 3px;
+  --radius-m: 6px;
+  --radius-l: 8px;
+  --radius-pill: 999px;
+  --font-ui: var(--font-system);
+  --font-display: var(--font-system);
+  --label-transform: none;
+  --label-tracking: 0;
+
+  --meter-track: #ece7e0;
+  --meter-fill: #c26a55;
+  --meter-danger: #b3261e;
+  --skeleton-base: #eeeae4;
+  --skeleton-shine: rgb(255 255 255 / 70%);
+  --selection: rgb(163 64 45 / 18%);
+  --scrollbar-thumb: #d3cbc0;
+
+  --scanline: transparent;
+  --noise-opacity: 0;
+  --texture-display: none;
+  --backdrop: none;
+  --brand-cursor: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CYBER — near-black blue/violet, neon cyan + magenta, glow.
+   ═══════════════════════════════════════════════════════════════ */
+:root[data-theme="cyber"] {
+  color-scheme: dark;
+
+  --surface-base: #07070f;
+  --surface-sunken: #040409;
+  --surface-raised: #0d0d1c;
+  --surface-overlay: #141428;
+  --surface-hover: #17172f;
+  --surface-active: #20204a;
+  --surface-header: rgb(7 7 15 / 84%);
+
+  --text-primary: #e8f1ff;
+  --text-secondary: #b9c3e6;
+  --text-muted: #8e97bd;
+  --text-heading: #3ef0ff;
+  --text-on-accent: #04040a;
+
+  --accent: #00e5ff;
+  --accent-hover: #5cf0ff;
+  --accent-text: #3ef0ff;
+  --accent-secondary: #ff5ce0;
+  --accent-wash: rgb(0 229 255 / 12%);
+
+  --state-success: #3dffa0;
+  --state-warning: #ffd23f;
+  --state-danger: #ff5c7a;
+  --state-info: #7aa7ff;
+  --state-success-wash: rgb(61 255 160 / 10%);
+  --state-success-edge: rgb(61 255 160 / 35%);
+  --state-warning-wash: rgb(255 210 63 / 10%);
+  --state-warning-edge: rgb(255 210 63 / 35%);
+  --state-danger-wash: rgb(255 92 122 / 12%);
+  --state-danger-edge: rgb(255 92 122 / 40%);
+  --state-info-wash: rgb(122 167 255 / 12%);
+  --state-info-edge: rgb(122 167 255 / 35%);
+  --star: #ffd23f;
+
+  --role-user: #3ef0ff;
+  --role-assistant: #ff5ce0;
+  --role-system: #8e97bd;
+  --role-tool: #ffd23f;
+  --role-thinking: #b18cff;
+
+  --border: #25254d;
+  --border-subtle: #1a1a38;
+  --border-well: #1f1f40;
+  --border-hover: #00e5ff;
+  --border-width: 1px;
+
+  --focus-color: #ff5ce0;
+  --focus-ring: 2px solid var(--focus-color);
+  --focus-offset: 2px;
+
+  --shadow-sm: 2px 2px 0 0 rgb(255 43 214 / 45%);
+  --shadow-md: 3px 3px 0 0 rgb(255 43 214 / 40%), 0 0 18px rgb(0 229 255 / 8%);
+  --shadow-lg: 4px 4px 0 0 rgb(255 43 214 / 40%), 0 0 32px rgb(0 229 255 / 14%);
+  --shadow-hover: 4px 4px 0 0 rgb(255 43 214 / 55%), 0 0 14px rgb(0 229 255 / 22%);
+  --shadow-press: 0 0 0 0 rgb(255 43 214 / 0%);
+  --shadow-glow: 0 0 12px rgb(0 229 255 / 45%);
+  --shadow-inset: inset 0 1px 0 rgb(0 229 255 / 10%);
+  --shadow-header: 0 1px 0 0 rgb(0 229 255 / 25%), 0 6px 24px rgb(0 229 255 / 6%);
+
+  --press-hover: translate(-2px, -2px);
+  --press-active: translate(2px, 2px);
+
+  --radius-s: 1px;
+  --radius-m: 2px;
+  --radius-l: 3px;
+  --radius-pill: 2px;
+  --font-ui: var(--font-system);
+  --font-display: var(--font-mono);
+  --label-transform: uppercase;
+  --label-tracking: 0.1em;
+
+  --meter-track: #040409;
+  --meter-fill: #00e5ff;
+  --meter-danger: #ff5c7a;
+  --skeleton-base: #11112a;
+  --skeleton-shine: rgb(0 229 255 / 9%);
+  --selection: rgb(255 43 214 / 30%);
+  --scrollbar-thumb: #2a2a5c;
+
+  --scanline: rgb(0 229 255 / 4.5%);
+  --noise-opacity: 0.03;
+  --texture-display: block;
+  --backdrop: radial-gradient(900px 520px at 0% -120px, rgb(255 43 214 / 10%), transparent 70%), radial-gradient(900px 520px at 100% -120px, rgb(0 229 255 / 10%), transparent 70%);
+  --brand-cursor: inline-block;
+}

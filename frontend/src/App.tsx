@@ -1,15 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as api from "./api";
+import { AppHeader } from "./components/AppHeader";
+import { Icon } from "./components/Icon";
 import { SessionTable } from "./components/SessionTable";
+import { StateMessage } from "./components/StateMessage";
 import { Toast, type ToastState } from "./components/Toast";
 import { TranscriptView } from "./components/TranscriptView";
 import { sortSessions, type SortKey } from "./format";
+import { useTheme } from "./theme";
 import type { ResumeMode, SessionIndex, Transcript } from "./types";
 
 const SEARCH_DEBOUNCE_MS = 250;
 const TOAST_MS = 3000;
 
 export default function App() {
+  const [theme, setTheme] = useTheme();
   const [sessions, setSessions] = useState<SessionIndex[]>([]);
   const [projects, setProjects] = useState<string[]>([]);
   const [sort, setSort] = useState<SortKey>("last_activity");
@@ -21,9 +26,15 @@ export default function App() {
   const [detail, setDetail] = useState<Transcript | null>(null);
   const [detailBookmarked, setDetailBookmarked] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [rescanning, setRescanning] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [openingId, setOpeningId] = useState<string | null>(null);
 
   const toastTimer = useRef<number | undefined>(undefined);
   const requestSeq = useRef(0);
+  const listScroll = useRef(0);
 
   const showMessage = useCallback((content: ReactNode) => {
     window.clearTimeout(toastTimer.current);
@@ -39,13 +50,25 @@ export default function App() {
   const loadSessions = useCallback(
     async (refresh = false) => {
       const seq = ++requestSeq.current;
+      setLoading(true);
+      setRescanning(refresh);
       try {
         const data = await api.listSessions({ q, project, bookmarkedOnly, refresh });
         if (seq !== requestSeq.current) return; // a newer request superseded this one
         setSessions(data.sessions);
         setProjects(data.projects);
+        setLoaded(true);
+        setLoadError(null);
       } catch (e) {
-        if (seq === requestSeq.current) showMessage(`Loading sessions failed: ${String(e)}`);
+        if (seq === requestSeq.current) {
+          setLoadError(String(e));
+          showMessage(`Loading sessions failed: ${String(e)}`);
+        }
+      } finally {
+        if (seq === requestSeq.current) {
+          setLoading(false);
+          setRescanning(false);
+        }
       }
     },
     [q, project, bookmarkedOnly, showMessage],
@@ -60,8 +83,9 @@ export default function App() {
     return () => window.clearTimeout(t);
   }, [searchInput]);
 
-  useEffect(() => {
-    if (detail) window.scrollTo(0, 0);
+  // Transcripts open at the top; the list comes back where it was left.
+  useLayoutEffect(() => {
+    window.scrollTo(0, detail ? 0 : listScroll.current);
   }, [detail]);
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
@@ -79,7 +103,7 @@ export default function App() {
       if (ok && data.ok) {
         showMessage(
           <>
-            Launching <strong>{mode}</strong> for {id}…
+            Launching <strong>{mode}</strong> for <span className="mono">{id}</span>…
           </>,
         );
       } else {
@@ -108,18 +132,21 @@ export default function App() {
   };
 
   const openDetail = async (id: string) => {
+    setOpeningId(id);
     let tr: Transcript | null = null;
     try {
       tr = await api.getTranscript(id);
     } catch {
       tr = null;
     }
+    setOpeningId(null);
     if (!tr) {
-      alert("Could not load session");
+      showMessage("Could not load session");
       return;
     }
     const listed = sessions.find((s) => s.session_id === tr.session_id);
     setDetailBookmarked(listed?.bookmarked ?? false);
+    listScroll.current = window.scrollY;
     setDetail(tr);
   };
 
@@ -129,65 +156,112 @@ export default function App() {
     if (now !== undefined) setDetailBookmarked(now);
   };
 
+  const filtered = q !== "" || project !== "" || bookmarkedOnly;
+  const clearFilters = () => {
+    setSearchInput("");
+    setQ("");
+    setProject("");
+    setBookmarkedOnly(false);
+  };
+
+  let placeholder: ReactNode;
+  if (loadError && sessions.length === 0) {
+    placeholder = (
+      <StateMessage
+        icon="alert"
+        tone="danger"
+        title="Couldn't load sessions"
+        action={
+          <button type="button" className="btn" onClick={() => void loadSessions()}>
+            <Icon name="refresh" />
+            <span>Retry</span>
+          </button>
+        }
+      >
+        {loadError}
+      </StateMessage>
+    );
+  } else if (filtered) {
+    placeholder = (
+      <StateMessage
+        icon="filter"
+        title="No sessions match"
+        action={
+          <button type="button" className="btn" onClick={clearFilters}>
+            <Icon name="close" />
+            <span>Clear filters</span>
+          </button>
+        }
+      >
+        Nothing fits the current search, project and bookmark filters.
+      </StateMessage>
+    );
+  } else {
+    placeholder = (
+      <StateMessage
+        icon="inbox"
+        title="No sessions yet"
+        action={
+          <button type="button" className="btn" onClick={() => void loadSessions(true)}>
+            <Icon name="refresh" />
+            <span>Rescan</span>
+          </button>
+        }
+      >
+        Claude Code session logs show up here once they are scanned.
+      </StateMessage>
+    );
+  }
+
   return (
     <>
-      <header>
-        <h1>Claude Sessions</h1>
-        <div className="controls">
-          <input
-            id="search"
-            type="search"
-            placeholder="Search title / prompts…"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
-          <select id="project" value={project} onChange={(e) => setProject(e.target.value)}>
-            <option value="">All projects</option>
-            {projects.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-          <button
-            id="bookmarks-toggle"
-            className={bookmarkedOnly ? "active" : undefined}
-            title="Show only bookmarked"
-            onClick={() => setBookmarkedOnly((v) => !v)}
-          >
-            ★ Bookmarks
-          </button>
-          <button id="rescan" title="Re-scan logs" onClick={() => void loadSessions(true)}>
-            ↻ Rescan
-          </button>
-        </div>
-      </header>
+      <AppHeader
+        searchInput={searchInput}
+        onSearchInput={setSearchInput}
+        project={project}
+        projects={projects}
+        onProject={setProject}
+        bookmarkedOnly={bookmarkedOnly}
+        onToggleBookmarkedOnly={() => setBookmarkedOnly((v) => !v)}
+        onRescan={() => void loadSessions(true)}
+        loading={loading || openingId !== null}
+        rescanning={rescanning}
+        theme={theme}
+        onTheme={setTheme}
+      />
 
-      <main>
+      <main className="app-main">
         {detail ? (
-          <TranscriptView
-            transcript={detail}
-            bookmarked={detailBookmarked}
-            onBack={() => setDetail(null)}
-            onResume={resume}
-            onToggleBookmark={toggleDetailBookmark}
-          />
+          <div key={`t-${detail.session_id}`} className="view view--transcript">
+            <TranscriptView
+              transcript={detail}
+              bookmarked={detailBookmarked}
+              onBack={() => setDetail(null)}
+              onResume={resume}
+              onToggleBookmark={toggleDetailBookmark}
+            />
+          </div>
         ) : (
-          <div id="list-view">
+          <div key="list" id="list-view" className="view view--list">
             <SessionTable
               sessions={sorted}
+              sort={sort}
+              dir={dir}
               onSort={onSort}
               onOpen={openDetail}
               onResume={resume}
               onToggleBookmark={toggleBookmark}
+              openingId={openingId}
+              skeleton={!loaded && !loadError}
+              placeholder={placeholder}
             />
-            <p id="count" className="muted">
-              {sessions.length} sessions
+            <p id="count" className="list-footer muted num">
+              {loaded ? `${sessions.length} sessions` : "Loading sessions…"}
             </p>
           </div>
         )}
-        {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
       </main>
+      <Toast toast={toast} onClose={() => setToast(null)} durationMs={TOAST_MS} />
     </>
   );
 }
