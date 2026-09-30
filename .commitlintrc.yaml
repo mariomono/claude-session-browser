@@ -1,0 +1,8 @@
+extends:
+  - "@commitlint/config-conventional"
+rules:
+  scope-empty: [2, "never"]
+  scope-min-length: [2, "always", 2]
+  scope-max-length: [2, "always", 45]
+  subject-min-length: [2, "always", 6]
+  header-max-length: [2, "always", 72]

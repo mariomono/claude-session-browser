@@ -1,7 +1,14 @@
+# Python
 __pycache__/
 *.pyc
 .venv/
-cache.json
 *.egg-info/
-config.json
-bookmarks.json
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+frontend/dist/
+
+# Runtime data: cache.json, bookmarks.json, launcher config.json
+data/

@@ -1,0 +1,40 @@
+name: claude-session-browser
+
+services:
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    # Session logs under ~/.claude/projects are chmod 600, so the container
+    # must run as the host user to read them. Override CSB_UID/CSB_GID if
+    # your user isn't 1000:1000.
+    user: "${CSB_UID:-1000}:${CSB_GID:-1000}"
+    environment:
+      CSB_CLAUDE_PROJECTS_DIR: /claude/projects
+      CSB_DATA_DIR: /data
+    volumes:
+      # Session logs are read straight from the host; the app never writes there.
+      - ~/.claude/projects:/claude/projects:ro
+      # cache.json, bookmarks.json and the optional launcher config.json live here.
+      - ./data:/data
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    # Localhost only: the resume endpoint spawns processes and must not be
+    # reachable from the network. Deliberately rare port to avoid clashing
+    # with other local containers.
+    ports:
+      - "127.0.0.1:43210:80"
+    depends_on:
+      backend:
+        condition: service_healthy
