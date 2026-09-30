@@ -31,3 +31,12 @@ def test_load_partial_file_fills_missing_keys(tmp_path):
     cfg = launch_config.load(p)
     assert cfg.distro == "OnlyDistro"
     assert cfg.launch == launch_config.DEFAULT_LAUNCH
+
+
+def test_launch_overridden_only_when_config_sets_launch(tmp_path):
+    p = tmp_path / "config.json"
+    assert launch_config.load(p).launch_overridden is False
+    p.write_text(json.dumps({"distro": "OnlyDistro"}))
+    assert launch_config.load(p).launch_overridden is False
+    p.write_text(json.dumps({"launch": ["echo", "{claude}"]}))
+    assert launch_config.load(p).launch_overridden is True

@@ -40,13 +40,24 @@ Each row has two actions:
 - **⑂ Fork** — same, but `--fork-session` starts a fresh session seeded from
   the old one, leaving the original untouched.
 
-Inside the container the backend cannot spawn a terminal on the host, so the
-UI shows the exact command with a **Copy** button — paste it into a terminal
-yourself. When the backend runs natively (see Development), it launches the
-terminal directly; the launch command is configurable: copy
-`backend/config.example.json` to `data/config.json` and edit `launch` /
-`distro`. Placeholders `{distro}`, `{cwd}`, and `{claude}` are substituted as
-single argv tokens.
+Containers can't open terminals on the host, so `just start` also runs a
+small **launch agent** natively (it exchanges request files with the backend
+under `data/launch/`). The agent picks your terminal automatically:
+
+- **WSL** — a Windows Terminal tab running your distro (`wt.exe`, distro
+  auto-detected from `WSL_DISTRO_NAME`), falling back to a plain window via
+  `cmd.exe /c start wsl.exe`.
+- **Native Linux** — `$TERMINAL`, `x-terminal-emulator`, gnome-terminal,
+  konsole, xfce4-terminal or xterm; the first one installed wins.
+- **macOS / native Windows** — Terminal.app / Windows Terminal or cmd.
+
+To force your own command instead, copy `backend/config.example.json` to
+`data/config.json` and edit `launch` / `distro`. Placeholders `{distro}`,
+`{cwd}`, and `{claude}` are substituted as single argv tokens. **A `launch`
+key in `data/config.json` replaces auto-detection entirely** — leave it out
+(or omit the file) to keep the automatic behavior. If the agent isn't
+running or no terminal is found, the UI shows the exact command with a
+**Copy** button instead.
 
 > **Security:** the resume endpoint can spawn a process on your machine. The
 > compose file binds the app to `127.0.0.1` only — do not expose it to a

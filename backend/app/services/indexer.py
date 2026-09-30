@@ -166,9 +166,14 @@ def build_index(root: Path, cache_path: Path, force: bool = False) -> list[Sessi
     return sessions
 
 
+def is_valid_session_id(session_id: str) -> bool:
+    """True if session_id is id-shaped: safe to use in a file glob and a shell command."""
+    return bool(_SESSION_ID_RE.match(session_id))
+
+
 def find_session_path(root: Path, session_id: str) -> Path | None:
     """Resolve a session id to its file, rejecting anything non-id-shaped."""
-    if not _SESSION_ID_RE.match(session_id):
+    if not is_valid_session_id(session_id):
         return None
     matches = list(root.glob(f"*/{session_id}.jsonl"))
     return matches[0] if matches else None

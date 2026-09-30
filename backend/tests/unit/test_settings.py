@@ -24,3 +24,4 @@ def test_data_files_live_in_data_dir(tmp_path):
     assert s.cache_path == tmp_path / "cache.json"
     assert s.bookmarks_path == tmp_path / "bookmarks.json"
     assert s.launch_config_path == tmp_path / "config.json"
+    assert s.launch_queue_dir == tmp_path / "launch"

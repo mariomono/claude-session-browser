@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     # Where Claude Code writes its session logs: one directory per project, one .jsonl per session.
     claude_projects_dir: Path = Field(default_factory=lambda: Path.home() / ".claude" / "projects")
 
-    # The app's own files: the index cache, the bookmarks and the optional launcher config.json.
+    # The app's own files: the index cache, the bookmarks, the optional launcher config.json and the
+    # launch-agent queue.
     # The directory is created on first write.
     data_dir: Path = Path("data")
 
@@ -33,6 +34,11 @@ class Settings(BaseSettings):
     @property
     def launch_config_path(self) -> Path:
         return self.data_dir / "config.json"
+
+    @property
+    def launch_queue_dir(self) -> Path:
+        """File queue shared with the host launch agent: requests/, results/, heartbeat, agent.pid."""
+        return self.data_dir / "launch"
 
 
 @lru_cache

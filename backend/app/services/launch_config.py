@@ -6,17 +6,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 DEFAULT_DISTRO = os.environ.get("WSL_DISTRO_NAME") or "Ubuntu-24.04"
-DEFAULT_LAUNCH = [
-    "cmd.exe", "/c", "start", "",
-    "wsl.exe", "-d", "{distro}", "--cd", "{cwd}", "--",
-    "bash", "-lic", "{claude}",
-]  # fmt: skip
+# The Windows-side command that opens a shell in the WSL distro, in the session's cwd, running claude.
+WSL_SHELL = ["wsl.exe", "-d", "{distro}", "--cd", "{cwd}", "--", "bash", "-lic", "{claude}"]
+DEFAULT_LAUNCH = ["cmd.exe", "/c", "start", "", *WSL_SHELL]
 
 
 @dataclass
 class LaunchConfig:
     distro: str = DEFAULT_DISTRO
     launch: list[str] = field(default_factory=lambda: list(DEFAULT_LAUNCH))
+    # True when config.json sets its own launch template, which then wins over terminal auto-detection.
+    launch_overridden: bool = False
 
 
 def load(path: Path) -> LaunchConfig:
@@ -29,7 +29,9 @@ def load(path: Path) -> LaunchConfig:
         return LaunchConfig()
     distro = data.get("distro")
     launch = data.get("launch")
+    overridden = isinstance(launch, list) and bool(launch)
     return LaunchConfig(
         distro=distro if isinstance(distro, str) and distro else DEFAULT_DISTRO,
-        launch=launch if isinstance(launch, list) and launch else list(DEFAULT_LAUNCH),
+        launch=launch if overridden else list(DEFAULT_LAUNCH),
+        launch_overridden=overridden,
     )

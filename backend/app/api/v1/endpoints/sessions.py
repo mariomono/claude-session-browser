@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.api.dependencies import LaunchConfigDep, SettingsDep
 from app.schemas.session import Transcript
-from app.services import bookmarks, indexer, launcher, parser
+from app.services import bookmarks, indexer, launch_queue, launcher, parser
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -63,6 +63,12 @@ def resume_session(
     if not path:
         raise HTTPException(status_code=404, detail="session not found")
     cwd = indexer.session_cwd(path) or str(Path.home())
+    # A live host launch agent opens the terminal natively; a backend running in a container
+    # cannot, so this path is what makes resume work under docker.
+    queue = launch_queue.QueuePaths(settings.launch_queue_dir)
+    if launch_queue.agent_alive(queue):
+        fallback = launcher.build_command(config.launch, config.distro, cwd, session_id, mode)
+        return launch_queue.resume_via_agent(queue, session_id, cwd, mode, fallback)
     # Resolved at call time so tests can replace the spawner on the module.
     return launcher.resume_session(session_id, cwd, mode, config, spawn=launcher.default_spawn)
 
