@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useState, type CSSProperties } from "react";
 import type { ResumeMode, Transcript, TranscriptEntry as Entry } from "../types";
 import { OutcomeBadge } from "./Badge";
 import { CopyButton } from "./CopyButton";
@@ -13,6 +13,11 @@ const FIRST_CHUNK = 60;
 const CHUNK = 250;
 /** Longest wait for an idle slot before a chunk is mounted anyway. */
 const IDLE_TIMEOUT_MS = 100;
+/**
+ * Cards per off-screen-skipping group. The browser re-checks every such box's visibility on each
+ * frame, so grouping keeps that per-frame work to a few hundred boxes instead of one per card.
+ */
+const GROUP = 20;
 
 /** Run `fn` when the main thread is idle (next macrotask where requestIdleCallback is missing); returns a canceller. */
 function whenIdle(fn: () => void): () => void {
@@ -24,15 +29,23 @@ function whenIdle(fn: () => void): () => void {
   return () => window.clearTimeout(handle);
 }
 
-/** One slice of cards; memoised, so mounting the next slice leaves the earlier ones untouched. */
+/**
+ * One slice of cards, split into groups of GROUP; memoised, so mounting the next slice leaves the
+ * earlier ones untouched.
+ */
 const EntryChunk = memo(function EntryChunk({ entries, start, end }: { entries: Entry[]; start: number; end: number }) {
-  return (
-    <>
-      {entries.slice(start, end).map((e, i) => (
-        <TranscriptEntry key={start + i} e={e} />
-      ))}
-    </>
-  );
+  const groups = [];
+  for (let from = start; from < end; from += GROUP) {
+    const to = Math.min(end, from + GROUP);
+    groups.push(
+      <div key={from} className="transcript__group" style={{ "--group-cards": to - from } as CSSProperties}>
+        {entries.slice(from, to).map((e, i) => (
+          <TranscriptEntry key={from + i} e={e} />
+        ))}
+      </div>,
+    );
+  }
+  return <>{groups}</>;
 });
 
 /**

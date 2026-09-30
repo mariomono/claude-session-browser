@@ -10,7 +10,7 @@ import { sortSessions, type SortKey } from "./format";
 import { useTheme } from "./theme";
 import type { ResumeMode, SessionIndex, Transcript } from "./types";
 
-const SEARCH_DEBOUNCE_MS = 250;
+const SEARCH_DEBOUNCE_MS = 150;
 const TOAST_MS = 3000;
 
 /** A handler with a fixed identity that always runs the latest `fn`, so memoised children skip re-renders. */

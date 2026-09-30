@@ -987,6 +987,19 @@
   margin: var(--space-5) auto var(--space-7);
 }
 
+/* A run of cards (see GROUP in TranscriptView.tsx): the browser skips layout/paint of off-screen
+   groups, tracking a few hundred boxes per frame instead of one per card. The padding, cancelled by
+   the negative margin, leaves room for the cards' shadows, which the skipping would otherwise clip. */
+.transcript__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: calc(-1 * var(--space-2));
+  padding: var(--space-2);
+  content-visibility: auto;
+  contain-intrinsic-size: auto calc(var(--group-cards) * (120px + var(--space-3)) - var(--space-3));
+}
+
 /* ── Entry cards: role-accented ───────────────────────────── */
 .entry {
   --entry-accent: var(--role-system);
@@ -996,9 +1009,10 @@
   border-radius: var(--radius-m);
   background: var(--surface-raised);
   box-shadow: var(--shadow-sm);
-  /* Long transcripts: skip layout/paint of off-screen cards. "auto" always contains each card, so a
-     collapsible animating its height re-flows only the column's positions, never other cards' insides;
-     the intrinsic size (replaced by the real one once rendered) keeps the scrollbar and anchoring steady. */
+  /* Inside an on-screen group: skip layout/paint of cards still off-screen. "auto" always contains each
+     card, so a collapsible animating its height re-flows only the column's positions, never other cards'
+     insides; the intrinsic size (replaced by the real one once rendered) keeps the scrollbar and
+     anchoring steady. */
   content-visibility: auto;
   contain-intrinsic-size: auto 120px;
 }
